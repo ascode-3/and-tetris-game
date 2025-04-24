@@ -1,14 +1,5 @@
-module.exports = (io) => {
-  io.on('connection', (socket) => {
-    console.log('A user connected');
+const io = require('socket.io-client');
 
-    // Placeholder for future event handlers
-    // socket.on('event_name', (data) => {
-    //   // Handle the event
-    // });
+const socket = io('https://and-tetris-game.onrender.com');
 
-    socket.on('disconnect', () => {
-      console.log('A user disconnected');
-    });
-  });
-}; 
+module.exports = socket; 
