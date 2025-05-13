@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
   const [isRegister, setIsRegister] = useState(false);
+  const [nickname, setNickname] = useState('');
   const navigate = useNavigate();
 
   const toggleForm = () => {
@@ -10,9 +11,18 @@ const LoginPage = () => {
   };
 
   const handleGuestLogin = () => {
-    const guestName = `guest_${Math.floor(10000000 + Math.random() * 90000000)}`; // Generate a random guest nickname
-    console.log(`Logged in as: ${guestName}`); // For demonstration purposes
-    navigate('/lobby');
+    // Generate a random guest nickname if none provided
+    const guestNickname = nickname || `guest_${Math.floor(10000000 + Math.random() * 90000000)}`;
+    
+    // 고유 사용자 ID 생성
+    const userId = `user_${Math.floor(10000000 + Math.random() * 90000000)}`;
+    
+    // 세션 스토리지에 사용자 정보 저장
+    sessionStorage.setItem('sessionUserId', userId);
+    sessionStorage.setItem('userNickname', guestNickname);
+    
+    console.log(`Logged in as: ${guestNickname} (ID: ${userId})`);
+    navigate('/lobby'); // 방 목록 페이지로 이동
   };
 
   const containerStyle = {
@@ -92,10 +102,16 @@ const LoginPage = () => {
           <button style={tabStyle(isRegister)} onClick={toggleForm}>회원가입</button>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <img src="/path/to/avatar.png" alt="User Avatar" style={avatarStyle} />
+          <img src="/api/placeholder/100/100" alt="User Avatar" style={avatarStyle} />
         </div>
-        <form style={formStyle}>
-          <input type="text" placeholder="닉네임" style={inputStyle} />
+        <form style={formStyle} onSubmit={(e) => e.preventDefault()}>
+          <input 
+            type="text" 
+            placeholder="닉네임" 
+            style={inputStyle} 
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+          />
           <input type="password" placeholder="비밀번호" style={inputStyle} />
           {isRegister && <input type="password" placeholder="비밀번호 확인" style={inputStyle} />}
           <div style={optionsStyle}>
@@ -104,12 +120,17 @@ const LoginPage = () => {
                 <input type="checkbox" /> 비밀번호 기억하기
               </label>
             )}
-            <button type="button" onClick={() => alert('Forgot password functionality')}>비밀번호 찾기</button>
+            <button type="button" onClick={() => alert('비밀번호 찾기 기능은 아직 구현되지 않았습니다.')}>비밀번호 찾기</button>
           </div>
           <button type="submit" style={buttonStyle}>{isRegister ? '회원가입' : '로그인'}</button>
         </form>
         <div style={footerStyle}>
-          <button type="button" onClick={isRegister ? toggleForm : handleGuestLogin}>{isRegister ? '로그인' : '게스트'}</button>
+          <button 
+            type="button" 
+            onClick={isRegister ? toggleForm : handleGuestLogin}
+          >
+            {isRegister ? '로그인' : '게스트'}
+          </button>
         </div>
       </div>
     </div>
