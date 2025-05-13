@@ -1,6 +1,7 @@
 # Dependencies
-/node_modules
-/frontend/node_modules
+node_modules/
+/.pnp
+.pnp.js
 
 # Environment
 .env
@@ -8,21 +9,18 @@
 .env.development.local
 .env.test.local
 .env.production.local
-/frontend/.env
 
-# Logs
+# Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Production build
+# Production
 /build
-/frontend/build
-
-# IDE
-.vscode/
-.idea/
+/dist
 
 # Misc
 .DS_Store
-Thumbs.db 
+.idea/
+.vscode/
+*.log 
