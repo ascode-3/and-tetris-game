@@ -25,6 +25,7 @@ io.on('connection', (socket) => {
 
     // 게임방 참가
     socket.on('joinRoom', ({ roomId, playerName }) => {
+        console.log(`Player ${playerName} (${socket.id}) joining room ${roomId}`);
         socket.join(roomId);
         
         if (!gameRooms.has(roomId)) {
@@ -97,7 +98,7 @@ io.on('connection', (socket) => {
         room.isGameStarted = true;
 
         // 모든 플레이어에게 게임 시작 알림
-        io.to(roomId).emit('gameStart');
+        io.to(roomId).emit('moveToTetrisPage', roomId);
         
         // 게임 시작 확인 메시지 전송
         socket.emit('gameStartConfirmation', {
@@ -118,6 +119,7 @@ io.on('connection', (socket) => {
             // 방의 다른 플레이어들에게 업데이트된 게임 상태 전송
             socket.to(roomId).emit('gameStateUpdate', {
                 playerId: socket.id,
+                playerName: room.players.get(socket.id)?.name,
                 gameState
             });
         }

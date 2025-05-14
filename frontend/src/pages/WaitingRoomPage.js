@@ -117,7 +117,7 @@ const WaitingRoomPage = () => {
 
     // 방 참가
     console.log('Emitting joinRoom event for room:', roomId);
-    socket.emit('joinRoom', roomId);
+    socket.emit('joinRoom', { roomId, playerName: userNickname });
 
     // 게임 시작 이벤트 리스너 등록
     const handleMoveToTetris = (receivedRoomId) => {
@@ -140,6 +140,8 @@ const WaitingRoomPage = () => {
       console.log('Received game start confirmation:', data);
       if (data.status === 'success') {
         console.log(`Game start confirmed for room: ${data.roomId} with ${data.participantCount} participants`);
+        // 게임 시작 성공 시 테트리스 페이지로 이동
+        navigate(`/tetris/${data.roomId}`);
       } else if (data.status === 'error') {
         console.error('Game start failed:', data.error);
         alert('게임 시작에 실패했습니다. 다시 시도해주세요.');
