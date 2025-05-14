@@ -6,7 +6,7 @@ import LobbyPage from './pages/LobbyPage';
 import RoomListPage from './pages/RoomListPage';
 import CreateRoomPage from './pages/CreateRoomPage';
 import WaitingRoomPage from './pages/WaitingRoomPage';
-import TetrisPage from './pages/TetrisPage';
+import TetrisPage from './pages/tetris/TetrisPage';
 
 const App = () => {
   return (
@@ -18,7 +18,7 @@ const App = () => {
         <Route path="/rooms"                 element={<RoomListPage />} />
         <Route path="/create-room"           element={<CreateRoomPage />} />
         <Route path="/waiting-room/:roomId"  element={<WaitingRoomPage />} />
-        <Route path="/tetris"                element={<TetrisPage />} />
+        <Route path="/tetris/:roomId"        element={<TetrisPage />} />
       </Routes>
     </>
   );
