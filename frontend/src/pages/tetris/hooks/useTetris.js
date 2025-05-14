@@ -1,15 +1,24 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ROWS, COLS, INITIAL_DROP_INTERVAL, LOCK_DELAY, MAX_LOCK_MOVES, KEYS } from '../constants';
+import { ROWS, COLS, BLOCK_SIZE, INITIAL_DROP_INTERVAL, LOCK_DELAY, MAX_LOCK_MOVES } from '../constants';
 import { createPiece, generateBag, checkCollision, getGhostPosition, rotatePiece } from '../utils/tetrisPiece';
 import { clearLines, mergePiece, drawBoard, drawPreviewPiece } from '../utils/tetrisBoard';
-import { updateScoreDisplay, updateLevelDisplay, addLineClearEffects, togglePauseOverlay } from '../utils/effects';
+import { updateScoreDisplay, updateLevelDisplay, addLineClearEffects } from '../utils/effects';
+
+// Constants
+const KEYS = {
+    LEFT: 37,    // Left arrow
+    RIGHT: 39,   // Right arrow
+    DOWN: 40,    // Down arrow
+    UP: 38,      // Up arrow
+    SPACE: 32,   // Spacebar
+    SHIFT: 16    // Shift
+};
 
 export function useTetris() {
     // Game state
     const [score, setScore] = useState(0);
     const [level, setLevel] = useState(1);
     const [isGameStarted, setIsGameStarted] = useState(false);
-    const [isPaused, setIsPaused] = useState(false);
     const [gameOver, setGameOver] = useState(false);
 
     // Refs for game state
@@ -26,6 +35,8 @@ export function useTetris() {
     const isLockingRef = useRef(false);
     const moveCounterRef = useRef(0);
     const dropIntervalRef = useRef(INITIAL_DROP_INTERVAL);
+    const animationFrameIdRef = useRef(null); // Added to track animation frame
+    const isGameStartedRef = useRef(false); // 추가: 직접 참조할 ref로 isGameStarted 상태 추적
 
     // Canvas refs
     const gameBoardRef = useRef(null);
@@ -50,16 +61,30 @@ export function useTetris() {
         nextNextCanvasRef.current = ref;
     }, []);
 
+    // 상태 변경을 감지하고 ref에 동기화
+    useEffect(() => {
+        isGameStartedRef.current = isGameStarted;
+    }, [isGameStarted]);
+
     // Update preview displays
     const updatePreviewDisplays = useCallback(() => {
         if (holdCanvasRef.current) {
-            drawPreviewPiece(holdCanvasRef.current.getContext('2d'), holdPieceRef.current);
+            const ctx = holdCanvasRef.current.getContext('2d');
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, holdCanvasRef.current.width, holdCanvasRef.current.height);
+            drawPreviewPiece(ctx, holdPieceRef.current);
         }
         if (nextCanvasRef.current) {
-            drawPreviewPiece(nextCanvasRef.current.getContext('2d'), nextPieceRef.current);
+            const ctx = nextCanvasRef.current.getContext('2d');
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, nextCanvasRef.current.width, nextCanvasRef.current.height);
+            drawPreviewPiece(ctx, nextPieceRef.current);
         }
         if (nextNextCanvasRef.current) {
-            drawPreviewPiece(nextNextCanvasRef.current.getContext('2d'), nextNextPieceRef.current);
+            const ctx = nextNextCanvasRef.current.getContext('2d');
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, nextNextCanvasRef.current.width, nextNextCanvasRef.current.height);
+            drawPreviewPiece(ctx, nextNextPieceRef.current);
         }
     }, []);
 
@@ -73,20 +98,37 @@ export function useTetris() {
 
     // Spawn new piece
     const spawnPiece = useCallback(() => {
+        // 기존 코드가 여기서 문제를 일으킬 수 있음
+        // nextPieceRef.current가 준비되지 않은 상태에서 currentPieceRef.current에 할당될 수 있음
+        if (!nextPieceRef.current) {
+            // 초기 bag 설정이 안되어 있으면 설정
+            if (pieceBagRef.current.length === 0) {
+                pieceBagRef.current = generateBag();
+            }
+            nextPieceRef.current = getNextPieceFromBag();
+        }
+        
+        if (!nextNextPieceRef.current) {
+            nextNextPieceRef.current = getNextPieceFromBag();
+        }
+        
         currentPieceRef.current = nextPieceRef.current;
         nextPieceRef.current = nextNextPieceRef.current;
         nextNextPieceRef.current = getNextPieceFromBag();
         
-        if (checkCollision(currentPieceRef.current, gridRef.current)) {
+        // 게임 오버 체크는 currentPiece가 할당된 후에 해야 함
+        if (currentPieceRef.current && checkCollision(currentPieceRef.current, gridRef.current)) {
             setGameOver(true);
+            return false;
         }
         
         updatePreviewDisplays();
+        return true;
     }, [getNextPieceFromBag, updatePreviewDisplays]);
 
     // Move piece
     const movePiece = useCallback((dir) => {
-        if (!currentPieceRef.current) return;
+        if (!currentPieceRef.current || !isGameStartedRef.current) return false;
 
         currentPieceRef.current.pos.x += dir;
         if (checkCollision(currentPieceRef.current, gridRef.current)) {
@@ -101,7 +143,7 @@ export function useTetris() {
 
     // Drop piece
     const drop = useCallback(() => {
-        if (!currentPieceRef.current) return;
+        if (!currentPieceRef.current || !isGameStartedRef.current) return false;
 
         currentPieceRef.current.pos.y++;
         if (checkCollision(currentPieceRef.current, gridRef.current)) {
@@ -138,22 +180,42 @@ export function useTetris() {
             moveCounterRef.current = 0;
         }
         dropCounterRef.current = 0;
+        return true;
     }, [spawnPiece]);
 
     // Hard drop
     const hardDrop = useCallback(() => {
-        if (!currentPieceRef.current) return;
+        if (!currentPieceRef.current || !isGameStartedRef.current) return;
 
         while (!checkCollision(currentPieceRef.current, gridRef.current)) {
             currentPieceRef.current.pos.y++;
         }
         currentPieceRef.current.pos.y--;
-        drop();
-    }, [drop]);
+        
+        // 바로 그리드에 병합하고 새 피스 생성
+        gridRef.current = mergePiece(gridRef.current, currentPieceRef.current);
+        const { newGrid, linesCleared, linesToClear } = clearLines(gridRef.current);
+        gridRef.current = newGrid;
+        
+        if (linesCleared > 0) {
+            addLineClearEffects(linesToClear);
+            setScore(prev => {
+                const newScore = prev + linesCleared * linesCleared * 100;
+                updateScoreDisplay(newScore);
+                return newScore;
+            });
+        }
+        
+        spawnPiece();
+        canHoldRef.current = true;
+        isLockingRef.current = false;
+        moveCounterRef.current = 0;
+        lockDelayTimerRef.current = 0;
+    }, [spawnPiece]);
 
     // Hold piece
     const holdPiece = useCallback(() => {
-        if (!canHoldRef.current || !currentPieceRef.current) return;
+        if (!canHoldRef.current || !currentPieceRef.current || !isGameStartedRef.current) return;
         
         if (!holdPieceRef.current) {
             holdPieceRef.current = {
@@ -180,7 +242,7 @@ export function useTetris() {
 
     // Rotate piece
     const rotate = useCallback(() => {
-        if (!currentPieceRef.current) return;
+        if (!currentPieceRef.current || !isGameStartedRef.current) return;
 
         const rotated = rotatePiece(currentPieceRef.current);
         const originalShape = currentPieceRef.current.shape;
@@ -195,7 +257,10 @@ export function useTetris() {
 
     // Game loop
     const gameLoop = useCallback((time = 0) => {
-        if (!isGameStarted || isPaused || gameOver) return;
+        if (!isGameStartedRef.current || gameOver) {
+            animationFrameIdRef.current = requestAnimationFrame(gameLoop);
+            return;
+        }
         
         const deltaTime = time - lastTimeRef.current;
         lastTimeRef.current = time;
@@ -216,22 +281,13 @@ export function useTetris() {
         }
         
         if (!gameOver) {
-            requestAnimationFrame(gameLoop);
+            animationFrameIdRef.current = requestAnimationFrame(gameLoop);
         }
-    }, [isGameStarted, isPaused, gameOver, drop]);
+    }, [gameOver, drop]);
 
     // Handle keyboard input
     const handleKeyPress = useCallback((event) => {
-        if (event.keyCode === KEYS.Q) {
-            if (!isGameStarted || gameOver) return;
-            setIsPaused(prev => {
-                togglePauseOverlay(!prev);
-                return !prev;
-            });
-            return;
-        }
-        
-        if (gameOver || !isGameStarted || isPaused) return;
+        if (gameOver || !isGameStartedRef.current) return;
         
         switch(event.keyCode) {
             case KEYS.LEFT:
@@ -255,16 +311,27 @@ export function useTetris() {
             default:
                 break;
         }
-    }, [isGameStarted, isPaused, gameOver, movePiece, drop, rotate, hardDrop, holdPiece]);
+    }, [gameOver, movePiece, drop, rotate, hardDrop, holdPiece]);
 
     // Start game
     const startGame = useCallback(() => {
-        if (isGameStarted) return;
+        console.log("Starting game...");
+        if (isGameStartedRef.current) {
+            console.log("Game already started, returning");
+            return;
+        }
+
+        // 캔버스 확인
+        if (!gameBoardRef.current || !holdCanvasRef.current || 
+            !nextCanvasRef.current || !nextNextCanvasRef.current) {
+            console.error("Canvas references not set properly");
+            return;
+        }
 
         // Reset game state
         setGameOver(false);
         setIsGameStarted(true);
-        setIsPaused(false);
+        isGameStartedRef.current = true;
         setScore(0);
         setLevel(1);
         
@@ -285,23 +352,47 @@ export function useTetris() {
         // Generate initial pieces
         nextPieceRef.current = getNextPieceFromBag();
         nextNextPieceRef.current = getNextPieceFromBag();
-        spawnPiece();
+        
+        const spawnSuccess = spawnPiece();
+        
+        if (!spawnSuccess) {
+            console.error("Failed to spawn initial piece");
+            setIsGameStarted(false);
+            isGameStartedRef.current = false;
+            return;
+        }
+        
+        // 미리 캔버스 초기화
+        if (gameBoardRef.current) {
+            const ctx = gameBoardRef.current.getContext('2d');
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, gameBoardRef.current.width, gameBoardRef.current.height);
+            drawBoard(ctx, gridRef.current, currentPieceRef.current, null);
+        }
         
         // Update displays
+        updatePreviewDisplays();
         updateScoreDisplay(0);
         updateLevelDisplay(1);
-        togglePauseOverlay(false);
         
+        console.log("Starting game loop...");
         // Start game loop
-        const animationId = requestAnimationFrame(gameLoop);
+        if (animationFrameIdRef.current) {
+            cancelAnimationFrame(animationFrameIdRef.current);
+        }
+        animationFrameIdRef.current = requestAnimationFrame(gameLoop);
+        
         return () => {
-            cancelAnimationFrame(animationId);
+            if (animationFrameIdRef.current) {
+                cancelAnimationFrame(animationFrameIdRef.current);
+            }
         };
-    }, [isGameStarted, gameLoop, getNextPieceFromBag, spawnPiece]);
+    }, [gameLoop, getNextPieceFromBag, spawnPiece, updatePreviewDisplays]);
 
     // Initialize game
     useEffect(() => {
-        if (!gameBoardRef.current || !holdCanvasRef.current || !nextCanvasRef.current || !nextNextCanvasRef.current) return;
+        if (!gameBoardRef.current || !holdCanvasRef.current || 
+            !nextCanvasRef.current || !nextNextCanvasRef.current) return;
 
         const gameBoard = gameBoardRef.current;
         const holdCanvas = holdCanvasRef.current;
@@ -309,25 +400,61 @@ export function useTetris() {
         const nextNextCanvas = nextNextCanvasRef.current;
         
         // Set canvas sizes
-        gameBoard.width = COLS * 30;
-        gameBoard.height = ROWS * 30;
-        holdCanvas.width = holdCanvas.height = 4 * 30;
-        nextCanvas.width = nextCanvas.height = 4 * 30;
-        nextNextCanvas.width = nextNextCanvas.height = 4 * 30;
+        gameBoard.width = COLS * BLOCK_SIZE;
+        gameBoard.height = ROWS * BLOCK_SIZE;
+        holdCanvas.width = holdCanvas.height = 4 * BLOCK_SIZE;
+        nextCanvas.width = nextCanvas.height = 4 * BLOCK_SIZE;
+        nextNextCanvas.width = nextNextCanvas.height = 4 * BLOCK_SIZE;
+        
+        // 초기 캔버스 배경 설정
+        const gameCtx = gameBoard.getContext('2d');
+        gameCtx.fillStyle = '#000';
+        gameCtx.fillRect(0, 0, gameBoard.width, gameBoard.height);
+        
+        const holdCtx = holdCanvas.getContext('2d');
+        holdCtx.fillStyle = '#000';
+        holdCtx.fillRect(0, 0, holdCanvas.width, holdCanvas.height);
+        
+        const nextCtx = nextCanvas.getContext('2d');
+        nextCtx.fillStyle = '#000';
+        nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+        
+        const nextNextCtx = nextNextCanvas.getContext('2d');
+        nextNextCtx.fillStyle = '#000';
+        nextNextCtx.fillRect(0, 0, nextNextCanvas.width, nextNextCanvas.height);
         
         // Add keyboard event listener
         document.addEventListener('keydown', handleKeyPress);
         
         return () => {
             document.removeEventListener('keydown', handleKeyPress);
+            if (animationFrameIdRef.current) {
+                cancelAnimationFrame(animationFrameIdRef.current);
+            }
         };
     }, [handleKeyPress]);
+
+    // Set up keyboard event listeners
+    useEffect(() => {
+        window.addEventListener('keydown', handleKeyPress);
+        return () => {
+            window.removeEventListener('keydown', handleKeyPress);
+        };
+    }, [handleKeyPress]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (animationFrameIdRef.current) {
+                cancelAnimationFrame(animationFrameIdRef.current);
+            }
+        };
+    }, []);
 
     return {
         score,
         level,
         isGameStarted,
-        isPaused,
         gameOver,
         gameBoardRef,
         holdCanvasRef,
@@ -337,6 +464,15 @@ export function useTetris() {
         setGameBoardRef,
         setHoldCanvasRef,
         setNextCanvasRef,
-        setNextNextCanvasRef
+        setNextNextCanvasRef,
+        currentGameState: {
+            grid: gridRef.current,
+            currentPiece: currentPieceRef.current,
+            score,
+            level,
+            holdPiece: holdPieceRef.current,
+            nextPiece: nextPieceRef.current,
+            nextNextPiece: nextNextPieceRef.current
+        }
     };
-} 
+}

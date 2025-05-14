@@ -80,11 +80,11 @@ export function drawPreviewPiece(ctx, piece) {
 
 // Draw the entire game board
 export function drawBoard(ctx, grid, currentPiece, ghostPiece) {
-    // Clear canvas
+    // Clear canvas with black background
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     
-    // Draw grid
+    // Draw grid lines
     drawGrid(ctx, ctx.canvas.width, ctx.canvas.height);
     
     // Draw placed pieces
