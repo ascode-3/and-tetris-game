@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTetris } from './hooks/useTetris';
 import { useSocket } from '../../hooks/useSocket';
@@ -11,6 +11,7 @@ const TetrisPage = () => {
   const [refsReady, setRefsReady] = useState(false);
   const [otherPlayers, setOtherPlayers] = useState([]);
   const playerName = localStorage.getItem('playerName') || 'Player';
+  const eventHandlersSet = useRef(false);
 
   // Socket 훅 사용
   const { socket, joinRoom, updateGameState } = useSocket();
@@ -51,53 +52,54 @@ const TetrisPage = () => {
     setNextNextCanvasRef
   ]);
 
+  // Handle game state updates from other players
+  const handleGameStateUpdate = useCallback((data) => {
+    if (data.playerId !== socket?.id) {
+      setOtherPlayers(prevPlayers => {
+        const updatedPlayers = prevPlayers.filter(p => p.id !== data.playerId);
+        return [...updatedPlayers, {
+          id: data.playerId,
+          name: data.playerName,
+          gameState: data.gameState
+        }];
+      });
+    }
+  }, [socket?.id]);
+
+  // Handle player disconnect
+  const handlePlayerDisconnect = useCallback((playerId) => {
+    setOtherPlayers(prevPlayers => 
+      prevPlayers.filter(p => p.id !== playerId)
+    );
+  }, []);
+
   // Socket.IO event handlers
   useEffect(() => {
-    if (!socket || !refsReady) return;
+    if (!socket || !refsReady || eventHandlersSet.current) return;
 
     console.log('Setting up socket event handlers in TetrisPage');
+    eventHandlersSet.current = true;
 
     // Join the game room
     joinRoom(roomId, playerName);
 
-    // Listen for game start event
-    const handleGameStart = () => {
-      console.log('Received gameStart event, starting game...');
-      startGame();
-    };
-
-    // Listen for game state updates from other players
-    const handleGameStateUpdate = (data) => {
-      if (data.playerId !== socket.id) {
-        setOtherPlayers(prevPlayers => {
-          const updatedPlayers = prevPlayers.filter(p => p.id !== data.playerId);
-          return [...updatedPlayers, {
-            id: data.playerId,
-            name: data.playerName,
-            gameState: data.gameState
-          }];
-        });
-      }
-    };
-
-    // Listen for player disconnect
-    const handlePlayerDisconnect = (playerId) => {
-      setOtherPlayers(prevPlayers => 
-        prevPlayers.filter(p => p.id !== playerId)
-      );
-    };
-
-    socket.on('gameStart', handleGameStart);
+    // Set up event listeners
     socket.on('gameStateUpdate', handleGameStateUpdate);
     socket.on('playerDisconnect', handlePlayerDisconnect);
+    socket.on('gameStart', () => {
+      console.log('Received gameStart event, starting game...');
+      startGame();
+    });
 
     // Cleanup
     return () => {
-      socket.off('gameStart', handleGameStart);
+      console.log('Cleaning up socket event handlers');
       socket.off('gameStateUpdate', handleGameStateUpdate);
       socket.off('playerDisconnect', handlePlayerDisconnect);
+      socket.off('gameStart');
+      eventHandlersSet.current = false;
     };
-  }, [socket, refsReady, roomId, playerName, startGame, joinRoom]);
+  }, [socket, refsReady, roomId, playerName, startGame, joinRoom, handleGameStateUpdate, handlePlayerDisconnect]);
 
   // Send game state updates
   useEffect(() => {
