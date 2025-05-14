@@ -30,7 +30,8 @@ io.on('connection', (socket) => {
         if (!gameRooms.has(roomId)) {
             gameRooms.set(roomId, {
                 players: new Map(),
-                gameStates: new Map()
+                gameStates: new Map(),
+                isGameStarted: false
             });
         }
 
@@ -59,6 +60,55 @@ io.on('connection', (socket) => {
         });
     });
 
+    // 게임 시작
+    socket.on('startGame', ({ roomId }) => {
+        console.log(`Received startGame event for room: ${roomId}`);
+        
+        if (!gameRooms.has(roomId)) {
+            socket.emit('gameStartConfirmation', {
+                status: 'error',
+                error: '존재하지 않는 방입니다.',
+                roomId
+            });
+            return;
+        }
+
+        const room = gameRooms.get(roomId);
+        
+        if (room.isGameStarted) {
+            socket.emit('gameStartConfirmation', {
+                status: 'error',
+                error: '이미 게임이 시작되었습니다.',
+                roomId
+            });
+            return;
+        }
+
+        if (room.players.size < 1) {
+            socket.emit('gameStartConfirmation', {
+                status: 'error',
+                error: '게임을 시작하기 위한 최소 인원이 부족합니다.',
+                roomId
+            });
+            return;
+        }
+
+        // 게임 시작 상태로 변경
+        room.isGameStarted = true;
+
+        // 모든 플레이어에게 게임 시작 알림
+        io.to(roomId).emit('gameStart');
+        
+        // 게임 시작 확인 메시지 전송
+        socket.emit('gameStartConfirmation', {
+            status: 'success',
+            roomId,
+            participantCount: room.players.size
+        });
+
+        console.log(`Game started in room ${roomId} with ${room.players.size} players`);
+    });
+
     // 게임 상태 업데이트
     socket.on('updateGameState', ({ roomId, gameState }) => {
         if (gameRooms.has(roomId)) {
@@ -66,7 +116,7 @@ io.on('connection', (socket) => {
             room.gameStates.set(socket.id, gameState);
 
             // 방의 다른 플레이어들에게 업데이트된 게임 상태 전송
-            socket.to(roomId).emit('gameStateUpdated', {
+            socket.to(roomId).emit('gameStateUpdate', {
                 playerId: socket.id,
                 gameState
             });
@@ -94,9 +144,7 @@ io.on('connection', (socket) => {
                 room.gameStates.delete(socket.id);
                 
                 // 방의 다른 플레이어들에게 알림
-                io.to(roomId).emit('playerLeft', {
-                    playerId: socket.id
-                });
+                io.to(roomId).emit('playerDisconnect', socket.id);
 
                 // 방에 플레이어가 없으면 방 삭제
                 if (room.players.size === 0) {

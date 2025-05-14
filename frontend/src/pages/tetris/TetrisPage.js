@@ -7,10 +7,10 @@ import './TetrisPage.css';
 
 const TetrisPage = () => {
   const navigate = useNavigate();
-  const { roomId } = useParams(); // URL에서 방 ID 가져오기
+  const { roomId } = useParams();
   const [refsReady, setRefsReady] = useState(false);
   const [otherPlayers, setOtherPlayers] = useState([]);
-  const playerName = localStorage.getItem('playerName') || 'Player'; // 플레이어 이름 가져오기
+  const playerName = localStorage.getItem('playerName') || 'Player';
 
   // Socket 훅 사용
   const { socket, joinRoom, updateGameState } = useSocket();
@@ -32,69 +32,6 @@ const TetrisPage = () => {
     currentGameState
   } = useTetris();
 
-  // Socket 이벤트 리스너 설정
-  useEffect(() => {
-    if (!socket) return;
-
-    // 방 상태 수신
-    socket.on('roomState', ({ players, gameStates }) => {
-      const others = players
-        .filter(player => player.id !== socket.id)
-        .map(player => ({
-          ...player,
-          gameState: gameStates.find(state => state.playerId === player.id)?.gameState
-        }));
-      setOtherPlayers(others);
-    });
-
-    // 새 플레이어 입장
-    socket.on('playerJoined', (player) => {
-      setOtherPlayers(prev => [...prev, { ...player, gameState: null }]);
-    });
-
-    // 플레이어 퇴장
-    socket.on('playerLeft', ({ playerId }) => {
-      setOtherPlayers(prev => prev.filter(player => player.id !== playerId));
-    });
-
-    // 게임 상태 업데이트 수신
-    socket.on('gameStateUpdated', ({ playerId, gameState }) => {
-      setOtherPlayers(prev => prev.map(player => 
-        player.id === playerId 
-          ? { ...player, gameState } 
-          : player
-      ));
-    });
-
-    return () => {
-      socket.off('roomState');
-      socket.off('playerJoined');
-      socket.off('playerLeft');
-      socket.off('gameStateUpdated');
-    };
-  }, [socket]);
-
-  // 방 참가
-  useEffect(() => {
-    if (socket && roomId) {
-      joinRoom(roomId, playerName);
-    }
-  }, [socket, roomId, playerName, joinRoom]);
-
-  // 게임 상태 업데이트 전송
-  useEffect(() => {
-    const sendGameState = () => {
-      if (socket && roomId && currentGameState) {
-        updateGameState(roomId, currentGameState);
-      }
-    };
-
-    // 주기적으로 게임 상태 전송 (60fps)
-    const interval = setInterval(sendGameState, 1000 / 60);
-
-    return () => clearInterval(interval);
-  }, [socket, roomId, currentGameState, updateGameState]);
-
   // Set canvas refs
   useEffect(() => {
     if (gameBoardRef.current && holdCanvasRef.current && 
@@ -114,25 +51,64 @@ const TetrisPage = () => {
     setNextNextCanvasRef
   ]);
 
-  // Auto start game after 2 seconds
+  // Socket.IO event handlers
   useEffect(() => {
-    let cleanupFunction = null;
-    
-    if (refsReady) {
-      console.log("Refs are ready, starting game in 2 seconds...");
-      const timer = setTimeout(() => {
-        console.log("Starting game now!");
-        cleanupFunction = startGame();
-      }, 2000);
+    if (!socket || !refsReady) return;
 
-      return () => {
-        clearTimeout(timer);
-        if (cleanupFunction) {
-          cleanupFunction();
-        }
-      };
-    }
-  }, [refsReady, startGame]);
+    console.log('Setting up socket event handlers in TetrisPage');
+
+    // Join the game room
+    joinRoom(roomId, playerName);
+
+    // Listen for game start event
+    const handleGameStart = () => {
+      console.log('Received gameStart event, starting game...');
+      startGame();
+    };
+
+    // Listen for game state updates from other players
+    const handleGameStateUpdate = (data) => {
+      if (data.playerId !== socket.id) {
+        setOtherPlayers(prevPlayers => {
+          const updatedPlayers = prevPlayers.filter(p => p.id !== data.playerId);
+          return [...updatedPlayers, {
+            id: data.playerId,
+            name: data.playerName,
+            gameState: data.gameState
+          }];
+        });
+      }
+    };
+
+    // Listen for player disconnect
+    const handlePlayerDisconnect = (playerId) => {
+      setOtherPlayers(prevPlayers => 
+        prevPlayers.filter(p => p.id !== playerId)
+      );
+    };
+
+    socket.on('gameStart', handleGameStart);
+    socket.on('gameStateUpdate', handleGameStateUpdate);
+    socket.on('playerDisconnect', handlePlayerDisconnect);
+
+    // Cleanup
+    return () => {
+      socket.off('gameStart', handleGameStart);
+      socket.off('gameStateUpdate', handleGameStateUpdate);
+      socket.off('playerDisconnect', handlePlayerDisconnect);
+    };
+  }, [socket, refsReady, roomId, playerName, startGame, joinRoom]);
+
+  // Send game state updates
+  useEffect(() => {
+    if (!socket || !currentGameState) return;
+
+    const interval = setInterval(() => {
+      updateGameState(roomId, currentGameState);
+    }, 100); // Update every 100ms
+
+    return () => clearInterval(interval);
+  }, [socket, roomId, currentGameState, updateGameState]);
 
   // Handle game over
   useEffect(() => {
