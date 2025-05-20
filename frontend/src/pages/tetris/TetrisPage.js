@@ -52,6 +52,14 @@ const TetrisPage = () => {
     setNextNextCanvasRef
   ]);
 
+  // refsReady가 true가 되면 본인 게임을 무조건 시작
+  useEffect(() => {
+    if (refsReady) {
+      console.log('refsReady! Forcing startGame()');
+      startGame();
+    }
+  }, [refsReady, startGame]);
+
   // Handle game state updates from other players
   const handleGameStateUpdate = useCallback((data) => {
     if (data.playerId !== socket?.id) {
