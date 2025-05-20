@@ -99,6 +99,7 @@ io.on('connection', (socket) => {
 
         // 모든 플레이어에게 게임 시작 알림
         io.to(roomId).emit('moveToTetrisPage', roomId);
+        io.to(roomId).emit('gameStart');
         
         // 게임 시작 확인 메시지 전송
         socket.emit('gameStartConfirmation', {
