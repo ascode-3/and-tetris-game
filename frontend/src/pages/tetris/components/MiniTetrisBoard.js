@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { COLORS } from '../constants'; // COLORS 배열 import
 // BLOCK_SIZE는 사용하지 않으므로 제거
 // import { BLOCK_SIZE } from '../constants';
 
@@ -40,7 +41,9 @@ const MiniTetrisBoard = ({ gameState, playerName }) => {
             grid.forEach((row, y) => {
                 row.forEach((value, x) => {
                     if (value) {
-                        ctx.fillStyle = value;
+                        // value가 숫자(1~7)이면 COLORS에서 색상값을 가져옴
+                        const color = typeof value === 'number' ? COLORS[value - 1] : value;
+                        ctx.fillStyle = color;
                         ctx.fillRect(
                             x * MINI_BLOCK_SIZE,
                             y * MINI_BLOCK_SIZE,

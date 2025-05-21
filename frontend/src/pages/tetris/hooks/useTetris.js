@@ -466,7 +466,7 @@ export function useTetris() {
         setNextCanvasRef,
         setNextNextCanvasRef,
         currentGameState: {
-            grid: gridRef.current,
+            grid: gridRef.current.map(row => [...row]),
             currentPiece: currentPieceRef.current,
             score,
             level,
