@@ -23,6 +23,7 @@ const WaitingRoomPage = () => {
   const [participants, setParticipants] = useState([]);
   const [isCreator, setIsCreator] = useState(false);
   const [participantDetails, setParticipantDetails] = useState([]);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const joinRoom = useCallback((roomId, userId, nickname) => {
     const roomsData = JSON.parse(localStorage.getItem('roomsData') || '{}');
@@ -192,8 +193,13 @@ const WaitingRoomPage = () => {
         return;
       }
 
+      if (participants.length < 2) {
+        setErrorMessage('게임 시작은 최소 2명부터 가능합니다.');
+        return;
+      }
+
       try {
-        // 객체 형태로 roomId 전달
+        setErrorMessage(''); // 에러 메시지 초기화
         socket.emit('startGame', { roomId });
         console.log('Emitted startGame event with data:', { roomId });
       } catch (error) {
@@ -231,6 +237,7 @@ const WaitingRoomPage = () => {
           </ul>
 
           {isCreator && (
+            <div>
             <button
               onClick={handleStartGame}
               style={{
@@ -245,6 +252,12 @@ const WaitingRoomPage = () => {
             >
               게임 시작
             </button>
+              {errorMessage && (
+                <p style={{ color: 'red', marginTop: '10px' }}>
+                  {errorMessage}
+                </p>
+              )}
+            </div>
           )}
 
           <button

@@ -187,21 +187,124 @@
     pointer-events: none;
 }
 
-/* Other players section */
+/* Other players section - 개선된 동적 레이아웃 */
 .other-players {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
+    /* 기본 스타일은 JS에서 동적으로 설정 */
     padding: 20px;
-    max-width: 600px;
+    align-content: flex-start;
+    justify-content: flex-start;
+    overflow: hidden; /* 스크롤 방지 */
+    height: fit-content;
+    max-height: 600px;
+}
+
+/* 동적 레이아웃 지원 클래스들 */
+/*.other-players.dynamic-layout {
+    /* 그리드 스타일은 인라인으로 적용됨 }*/
+
+
+
+/* 컬럼별 최적화 스타일 */
+.other-players.cols-1 {
+    justify-items: center;
+    grid-template-columns: 1fr;
+    max-width: 400px;
+}
+
+.other-players.cols-2 {
+    justify-items: center;
+    grid-template-columns: 1fr 1fr;
+    max-width: 500px;
+    gap: 25px;
+}
+
+.other-players.cols-3 {
+    justify-items: center;
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 650px;
+    gap: 20px;
+}
+
+.other-players.cols-4 {
+    justify-items: center;
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 800px;
+    gap: 15px;
+}
+
+.other-players.cols-5 {
+    justify-items: center;
+    grid-template-columns: repeat(5, 1fr);
+    max-width: 950px;
+    gap: 12px;
+}
+
+.other-players.cols-6 {
+    justify-items: center;
+    grid-template-columns: repeat(6, 1fr);
+    max-width: 1100px;
+    gap: 10px;
+}
+
+/* 기존 레이아웃 호환성 유지 */
+.other-players.one-on-one {
+    justify-content: center;
+    align-items: center;
+}
+
+.other-players.multi-alive {
     align-content: flex-start;
 }
 
+.other-players.full {
+    max-width: 1200px;
+}
+
+.other-players.two-players {
+    justify-content: center;
+}
+
+.other-players.multi-out {
+    align-content: flex-start;
+}
+
+/* Mini Tetris Board */
 .mini-tetris-board {
     background-color: rgba(0, 0, 0, 0.7);
     padding: 10px;
     border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    transition: all 0.3s ease; /* 크기 변화 시 부드러운 전환 */
+    min-width: 80px;
+    min-height: 160px;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* 컬럼 수에 따른 미니 보드 최적화 */
+.other-players.cols-1 .mini-tetris-board {
+    padding: 12px;
+    border-width: 2px;
+}
+
+.other-players.cols-2 .mini-tetris-board {
+    padding: 10px;
+}
+
+.other-players.cols-3 .mini-tetris-board {
+    padding: 8px;
+}
+
+.other-players.cols-4 .mini-tetris-board,
+.other-players.cols-5 .mini-tetris-board,
+.other-players.cols-6 .mini-tetris-board {
+    padding: 6px;
+    font-size: 0.85em;
 }
 
 .player-name {
@@ -209,10 +312,75 @@
     font-size: 0.8em;
     margin-bottom: 5px;
     text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    font-weight: 500;
+}
+
+/* 작은 크기일 때 플레이어 이름 폰트 조절 */
+.other-players.cols-4 .player-name,
+.other-players.cols-5 .player-name,
+.other-players.cols-6 .player-name {
+    font-size: 0.7em;
+    margin-bottom: 3px;
 }
 
 .player-game {
     display: flex;
     gap: 15px;
     align-items: flex-start;
+}
+
+/* 반응형 최적화 */
+@media (max-width: 1400px) {
+    .container {
+        transform: scale(0.8);
+    }
+    
+    .other-players {
+        max-width: 600px;
+    }
+    
+    .other-players.full {
+        max-width: 900px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .container {
+        transform: scale(0.75);
+        padding-left: 20px;
+    }
+    
+    .game-area {
+        gap: 20px;
+    }
+    
+    .other-players {
+        max-width: 500px;
+        padding: 15px;
+    }
+    
+    .other-players.full {
+        max-width: 800px;
+    }
+}
+
+@media (max-width: 900px) {
+    .container {
+        transform: scale(0.7);
+        padding-left: 10px;
+    }
+    
+    .game-area {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .other-players {
+        max-width: 100%;
+        margin-top: 20px;
+    }
 }
