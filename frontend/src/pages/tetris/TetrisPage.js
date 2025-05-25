@@ -140,120 +140,137 @@ const TetrisPage = () => {
     navigate('/rooms');
   };
 
-  // 동적 레이아웃 계산 함수
-  const calculateOptimalLayout = useCallback((playerCount) => {
-    if (playerCount === 0) return { cols: 0, rows: 0, boardWidth: 0, boardHeight: 0 };
-    
-    // 기본 설정
-    const availableWidth = gameOver ? 1200 : 700; // 본인이 아웃되면 더 큰 공간 사용
-    const availableHeight = 600;
-    const minBoardWidth = 80;
-    const minBoardHeight = 160;
-    const maxBoardWidth = gameOver ? 200 : 150;
-    const maxBoardHeight = gameOver ? 400 : 300;
-    const gap = 20;
-
-    let bestLayout = { cols: 1, rows: playerCount, boardWidth: minBoardWidth, boardHeight: minBoardHeight };
-    let bestScore = 0;
-
-    // 가능한 모든 레이아웃 조합 시도
-    for (let cols = 1; cols <= Math.min(playerCount, 6); cols++) {
-      const rows = Math.ceil(playerCount / cols);
-      
-      // 계산된 보드 크기
-      const boardWidth = Math.floor((availableWidth - gap * (cols - 1)) / cols);
-      const boardHeight = Math.floor((availableHeight - gap * (rows - 1)) / rows);
-      
-      // 제약 조건 확인
-      if (boardWidth >= minBoardWidth && boardHeight >= minBoardHeight &&
-          boardWidth <= maxBoardWidth && boardHeight <= maxBoardHeight) {
-        
-        // 2:1 비율 유지 (테트리스 판 특성)
-        const adjustedHeight = Math.min(boardHeight, boardWidth * 2);
-        const adjustedWidth = Math.min(boardWidth, adjustedHeight / 2);
-        
-        // 점수 계산 (크기가 클수록, 비율이 2:1에 가까울수록 높은 점수)
-        const sizeScore = adjustedWidth * adjustedHeight;
-        const ratioScore = 1 - Math.abs((adjustedHeight / adjustedWidth) - 2) / 2;
-        const totalScore = sizeScore * ratioScore;
-        
-        if (totalScore > bestScore) {
-          bestScore = totalScore;
-          bestLayout = {
-            cols,
-            rows,
-            boardWidth: Math.floor(adjustedWidth),
-            boardHeight: Math.floor(adjustedHeight)
-          };
-        }
-      }
-    }
-
-    return bestLayout;
-  }, [gameOver]);
-
-  // 동적 스타일과 클래스명 계산
-  const { otherPlayersStyle, otherPlayersClassName, miniBoardStyle } = useMemo(() => {
-    const playerCount = otherPlayers.length;
-    const layout = calculateOptimalLayout(playerCount);
-    
-    // 기본 클래스명
-    let className = 'other-players';
-    
-    // 상황별 클래스명 추가
-    if (!gameOver) {
-      if (playerCount === 1) {
-        className += ' one-on-one';
-      } else if (playerCount >= 2) {
-        className += ' multi-alive';
-      }
-    } else {
-      if (playerCount === 2) {
-        className += ' full two-players';
-      } else if (playerCount >= 3) {
-        className += ' full multi-out';
-      }
-    }
-    
-    // 동적 레이아웃 클래스 추가
-    className += ` dynamic-layout cols-${layout.cols}`;
-
-    // 컨테이너 스타일
-    const containerStyle = {
-      display: 'grid',
-      gridTemplateColumns: `repeat(${layout.cols}, 1fr)`,
-      gridTemplateRows: `repeat(${layout.rows}, 1fr)`,
-      gap: '20px',
-      padding: '20px',
-      maxWidth: gameOver ? '1200px' : '700px',
-      maxHeight: '600px',
-      alignContent: 'start',
-      justifyContent: 'start',
-      overflow: 'hidden' // 스크롤 방지
-    };
-
-    // 미니 보드 스타일
-    const boardStyle = playerCount > 0 ? {
-      width: `${layout.boardWidth}px`,
-      height: `${layout.boardHeight}px`,
-      minWidth: `${layout.boardWidth}px`,
-      minHeight: `${layout.boardHeight}px`
-    } : {};
-
+  // 동적 레이아웃 계산 함수 수정
+const calculateOptimalLayout = useCallback((playerCount) => {
+  if (playerCount === 0) return { cols: 0, rows: 0, boardWidth: 0, boardHeight: 0 };
+  
+  // 1명일 때는 특별 처리 (1:1 모드)
+  if (playerCount === 1) {
     return {
-      otherPlayersStyle: containerStyle,
-      otherPlayersClassName: className,
-      miniBoardStyle: boardStyle
+      cols: 1,
+      rows: 1,
+      boardWidth: gameOver ? 300 : 300, // 1:1일 때는 큰 크기로
+      boardHeight: gameOver ? 600 : 600
     };
-  }, [otherPlayers.length, gameOver, calculateOptimalLayout]);
+  }
+  
+  // 기본 설정
+  const availableWidth = gameOver ? 1200 : 700;
+  const availableHeight = 600;
+  const minBoardWidth = 80;
+  const minBoardHeight = 160;
+  const maxBoardWidth = gameOver ? 200 : 150;
+  const maxBoardHeight = gameOver ? 400 : 300;
+  const gap = 20;
 
-  // 1대1 특별 처리 (기존 로직 유지)
-  const miniBoard1v1Style = useMemo(() => {
-    if (!gameOver && otherPlayers.length === 1) {
-      return { width: '300px', height: '600px' };
+  let bestLayout = { cols: 1, rows: playerCount, boardWidth: minBoardWidth, boardHeight: minBoardHeight };
+  let bestScore = 0;
+
+  // 2~5명일 때는 가로 배치 우선으로 강제
+  const maxCols = playerCount <= 5 ? playerCount : 6; // 5명 이하면 모두 가로로
+  
+  // 가능한 모든 레이아웃 조합 시도
+  for (let cols = 1; cols <= maxCols; cols++) {
+    const rows = Math.ceil(playerCount / cols);
+    
+    // 2~5명일 때는 가로 배치를 강하게 선호
+    let layoutPreference = 1;
+    if (playerCount >= 2 && playerCount <= 5 && cols === playerCount) {
+      layoutPreference = 10; // 가로 배치에 큰 가중치
     }
-    return miniBoardStyle; // 동적 계산된 스타일 사용
-  }, [gameOver, otherPlayers.length, miniBoardStyle]);
+    
+    // 계산된 보드 크기
+    const boardWidth = Math.floor((availableWidth - gap * (cols - 1)) / cols);
+    const boardHeight = Math.floor((availableHeight - gap * (rows - 1)) / rows);
+    
+    // 제약 조건 확인
+    if (boardWidth >= minBoardWidth && boardHeight >= minBoardHeight &&
+        boardWidth <= maxBoardWidth && boardHeight <= maxBoardHeight) {
+      
+      // 2:1 비율 유지 (테트리스 판 특성)
+      const adjustedHeight = Math.min(boardHeight, boardWidth * 2);
+      const adjustedWidth = Math.min(boardWidth, adjustedHeight / 2);
+      
+      // 점수 계산 (크기가 클수록, 비율이 2:1에 가까울수록 높은 점수)
+      const sizeScore = adjustedWidth * adjustedHeight;
+      const ratioScore = 1 - Math.abs((adjustedHeight / adjustedWidth) - 2) / 2;
+      const totalScore = sizeScore * ratioScore * layoutPreference;
+      
+      if (totalScore > bestScore) {
+        bestScore = totalScore;
+        bestLayout = {
+          cols,
+          rows,
+          boardWidth: Math.floor(adjustedWidth),
+          boardHeight: Math.floor(adjustedHeight)
+        };
+      }
+    }
+  }
+
+  return bestLayout;
+}, [gameOver]);
+
+// 동적 스타일과 클래스명 계산 부분도 수정
+const { otherPlayersStyle, otherPlayersClassName, miniBoardStyle } = useMemo(() => {
+  const playerCount = otherPlayers.length;
+  const layout = calculateOptimalLayout(playerCount);
+  
+  // 기본 클래스명
+  let className = 'other-players';
+  
+  // 상황별 클래스명 추가
+  if (!gameOver) {
+    if (playerCount === 1) {
+      className += ' one-on-one';
+    } else if (playerCount >= 2) {
+      className += ' multi-alive';
+    }
+  } else {
+    if (playerCount === 2) {
+      className += ' full two-players';
+    } else if (playerCount >= 3) {
+      className += ' full multi-out';
+    }
+  }
+  
+  // 동적 레이아웃 클래스 추가
+  className += ` dynamic-layout cols-${layout.cols}`;
+
+  // 컨테이너 스타일
+  const containerStyle = {
+    display: 'grid',
+    gridTemplateColumns: `repeat(${layout.cols}, 1fr)`,
+    gridTemplateRows: `repeat(${layout.rows}, 1fr)`,
+    gap: '20px',
+    padding: '20px',
+    maxWidth: playerCount === 1 ? '350px' : (gameOver ? '1200px' : '700px'), // 1명일 때 최대 너비 조정
+    maxHeight: '600px',
+    alignContent: 'start',
+    justifyContent: 'start',
+    overflow: 'hidden'
+  };
+
+  // 미니 보드 스타일
+  const boardStyle = playerCount > 0 ? {
+    width: `${layout.boardWidth}px`,
+    height: `${layout.boardHeight}px`,
+    minWidth: `${layout.boardWidth}px`,
+    minHeight: `${layout.boardHeight}px`
+  } : {};
+
+  return {
+    otherPlayersStyle: containerStyle,
+    otherPlayersClassName: className,
+    miniBoardStyle: boardStyle
+  };
+}, [otherPlayers.length, gameOver, calculateOptimalLayout]);
+
+// 1대1 특별 처리는 이제 calculateOptimalLayout에서 처리하므로 단순화
+const miniBoard1v1Style = useMemo(() => {
+  // 동적 계산된 스타일을 그대로 사용
+  return miniBoardStyle;
+}, [miniBoardStyle]);
 
   return (
     <div className="container">
