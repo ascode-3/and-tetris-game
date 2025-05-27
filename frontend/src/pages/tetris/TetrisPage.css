@@ -278,7 +278,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    transition: all 0.3s ease; /* 크기 변화 시 부드러운 전환 */
+    /* transition 속성 제거 - 애니메이션 없이 즉시 크기 변경 */
     min-width: 80px;
     min-height: 160px;
     width: 100%;

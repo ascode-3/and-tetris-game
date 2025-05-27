@@ -68,7 +68,25 @@ const TetrisPage = () => {
         const playerIndex = prevPlayers.findIndex(p => p.id === data.playerId);
 
         if (playerIndex > -1) {
-          // Player found: Update their game state while preserving order
+          // 이미 게임 오버된 플레이어의 상태는 업데이트하지 않음
+          if (prevPlayers[playerIndex].gameState?.isGameOver) {
+            // 다만 isGameOver 플래그가 있는 상태에서는 유지
+            if (data.gameState?.isGameOver) {
+              return prevPlayers;
+            }
+            // 새 상태에 isGameOver 플래그가 없는 경우, 기존 플래그 유지
+            const newPlayers = [...prevPlayers];
+            newPlayers[playerIndex] = {
+              ...newPlayers[playerIndex],
+              gameState: {
+                ...data.gameState,
+                isGameOver: true
+              }
+            };
+            return newPlayers;
+          }
+          
+          // 일반 상태 업데이트
           const newPlayers = [...prevPlayers];
           newPlayers[playerIndex] = {
             ...newPlayers[playerIndex],
