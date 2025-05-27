@@ -10,6 +10,9 @@ const TetrisPage = () => {
   const { roomId } = useParams();
   const [refsReady, setRefsReady] = useState(false);
   const [otherPlayers, setOtherPlayers] = useState([]);
+  const [gameOver, setGameOver] = useState(false);
+  const [isGameWon, setIsGameWon] = useState(false);
+  const [winner, setWinner] = useState(null);
   const playerName = sessionStorage.getItem('userNickname') || '게스트_' + (sessionStorage.getItem('sessionUserId')?.slice(-4) || '0000');
   const eventHandlersSet = useRef(false);
 
@@ -29,7 +32,7 @@ const TetrisPage = () => {
     setHoldCanvasRef,
     setNextCanvasRef,
     setNextNextCanvasRef,
-    gameOver,
+    gameOver: gameIsOver,
     currentGameState
   } = useTetris();
 
@@ -132,6 +135,24 @@ const TetrisPage = () => {
       });
     }
   }, [socket?.id]);
+  
+  // 게임 승리 이벤트 핸들러
+  const handleGameWin = useCallback((data) => {
+    console.log('Game won by:', data.winner);
+    setIsGameWon(true);
+    setWinner(data.winner);
+  }, []);
+  
+  // 게임 재시작 이벤트 핸들러
+  const handleGameRestart = useCallback(() => {
+    console.log('Game restarted');
+    setIsGameWon(false);
+    setWinner(null);
+    setGameOver(false);
+    if (gameBoardRef.current) {
+      startGame();
+    }
+  }, []);
 
   // Handle player disconnect
   const handlePlayerDisconnect = useCallback((playerId) => {
@@ -155,6 +176,8 @@ const TetrisPage = () => {
     socket.on('gameStateUpdate', handleGameStateUpdate);
     socket.on('playerDisconnect', handlePlayerDisconnect);
     socket.on('playerGameOver', handlePlayerGameOver);
+    socket.on('gameWin', handleGameWin);
+    socket.on('gameRestart', handleGameRestart);
     socket.on('gameStart', () => {
       console.log('Received gameStart event, starting game...');
       startGame();
@@ -166,10 +189,11 @@ const TetrisPage = () => {
       socket.off('gameStateUpdate', handleGameStateUpdate);
       socket.off('playerDisconnect', handlePlayerDisconnect);
       socket.off('playerGameOver', handlePlayerGameOver);
-      socket.off('gameStart');
+      socket.off('gameWin', handleGameWin);
+      socket.off('gameRestart', handleGameRestart);
       eventHandlersSet.current = false;
     };
-  }, [socket, refsReady, roomId, playerName, startGame, joinRoom, handleGameStateUpdate, handlePlayerDisconnect, handlePlayerGameOver]);
+  }, [socket, refsReady, roomId, playerName, startGame, joinRoom, handleGameStateUpdate, handlePlayerDisconnect, handlePlayerGameOver, handleGameWin, handleGameRestart]);
 
   // Send game state updates
   useEffect(() => {
@@ -182,9 +206,20 @@ const TetrisPage = () => {
     return () => clearInterval(interval);
   }, [socket, roomId, currentGameState, updateGameState]);
 
-  const handleLeaveGame = () => {
-    navigate('/rooms');
-  };
+  // 게임 나가기 처리
+  const handleLeaveGame = useCallback(() => {
+    if (socket) {
+      socket.emit('leaveRoom', { roomId });
+      navigate('/lobby');
+    }
+  }, [socket, roomId, navigate]);
+  
+  // 게임 계속하기 처리
+  const handleContinue = useCallback(() => {
+    if (socket) {
+      socket.emit('restartGame', { roomId });
+    }
+  }, [socket, roomId]);
 
   // 동적 레이아웃 계산 함수 수정
 const calculateOptimalLayout = useCallback((playerCount) => {
@@ -321,60 +356,85 @@ const miniBoard1v1Style = useMemo(() => {
   return (
     <div className="container">
       <div className="game-area">
-        {!gameOver && (
-        <div className="player-game">
-          <div className="side-panel left">
-            <div className="hold-box">
-              <div className="panel-label">Hold:</div>
-              <canvas ref={holdCanvasRef} id="holdCanvas" width="120" height="120"></canvas>
+        {!isGameWon ? (
+          // 일반 게임 화면
+          <>
+            {!gameOver && (
+              <div className="player-game">
+                <div className="side-panel left">
+                  <div className="hold-box">
+                    <div className="panel-label">Hold:</div>
+                    <canvas ref={holdCanvasRef} id="holdCanvas" width="120" height="120"></canvas>
+                  </div>
+                </div>
+                <div className="game-board-container">
+                  <canvas ref={gameBoardRef} id="gameBoard" width="300" height="600"></canvas>
+                </div>
+                <div className="side-panel right">
+                  <div className="next-box">
+                    <div className="panel-label">Next:</div>
+                    <canvas ref={nextCanvasRef} id="nextCanvas" width="120" height="120"></canvas>
+                  </div>
+                  <div className="next-next-box">
+                    <div className="panel-label">Next Next:</div>
+                    <canvas ref={nextNextCanvasRef} id="nextNextCanvas" width="120" height="120"></canvas>
+                  </div>
+                  <div className="controls">
+                    <div className="panel-label">Controls:</div>
+                    <div className="control-item">←→ : 이동</div>
+                    <div className="control-item">↑ : 회전</div>
+                    <div className="control-item">↓ : 소프트 드롭</div>
+                    <div className="control-item">Space : 하드 드롭</div>
+                    <div className="control-item">Shift : 홀드</div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div 
+              className={otherPlayersClassName}
+              style={otherPlayersStyle}
+            >
+              {otherPlayers.map((player) => (
+                // 게임 오버된 플레이어는 표시하지 않음
+                !player.gameState?.isGameOver && (
+                  <MiniTetrisBoard
+                    key={player.id}
+                    gameState={player.gameState}
+                    playerName={player.name}
+                    style={!gameOver && otherPlayers.length === 1 ? miniBoard1v1Style : miniBoardStyle}
+                  />
+                )
+              ))}
+            </div>
+          </>
+        ) : (
+          // 우승 화면
+          <div className="win-screen">
+            <h2 className="win-title">게임 종료!</h2>
+            <p className="win-message">
+              {winner?.id === socket?.id 
+                ? '축하합니다! 당신이 우승했습니다!' 
+                : `${winner?.name}님이 우승했습니다!`}
+            </p>
+            <div className="win-buttons">
+              <button className="continue-button" onClick={handleContinue}>
+                계속하기
+              </button>
+              <button className="leave-button" onClick={handleLeaveGame}>
+                나가기
+              </button>
             </div>
           </div>
-          <div className="game-board-container">
-            <canvas ref={gameBoardRef} id="gameBoard" width="300" height="600"></canvas>
-          </div>
-          <div className="side-panel right">
-            <div className="next-box">
-              <div className="panel-label">Next:</div>
-              <canvas ref={nextCanvasRef} id="nextCanvas" width="120" height="120"></canvas>
-            </div>
-            <div className="next-next-box">
-              <div className="panel-label">Next Next:</div>
-              <canvas ref={nextNextCanvasRef} id="nextNextCanvas" width="120" height="120"></canvas>
-            </div>
-            <div className="controls">
-              <div className="panel-label">Controls:</div>
-              <div className="control-item">←→ : 이동</div>
-              <div className="control-item">↑ : 회전</div>
-              <div className="control-item">↓ : 소프트 드롭</div>
-              <div className="control-item">Space : 하드 드롭</div>
-              <div className="control-item">Shift : 홀드</div>
-            </div>
-          </div>
-        </div>
         )}
-        <div 
-          className={otherPlayersClassName}
-          style={otherPlayersStyle}
-        >
-          {otherPlayers.map((player) => (
-            // 게임 오버된 플레이어는 표시하지 않음
-            !player.gameState?.isGameOver && (
-              <MiniTetrisBoard
-                key={player.id}
-                gameState={player.gameState}
-                playerName={player.name}
-                style={!gameOver && otherPlayers.length === 1 ? miniBoard1v1Style : miniBoardStyle}
-              />
-            )
-          ))}
-        </div>
       </div>
-      <button
-        className="leave-button"
-        onClick={handleLeaveGame}
-      >
-        게임 나가기
-      </button>
+      {!isGameWon && (
+        <button
+          className="leave-button"
+          onClick={handleLeaveGame}
+        >
+          게임 나가기
+        </button>
+      )}
     </div>
   );
 };

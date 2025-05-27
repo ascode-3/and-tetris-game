@@ -286,6 +286,53 @@
     box-sizing: border-box;
 }
 
+/* 우승 화면 스타일 */
+.win-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 400px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    margin: 20px 0;
+}
+
+.win-title {
+    font-size: 2.5em;
+    color: #ffcc00;
+    margin-bottom: 20px;
+    text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+}
+
+.win-message {
+    font-size: 1.5em;
+    color: white;
+    margin-bottom: 30px;
+}
+
+.win-buttons {
+    display: flex;
+    gap: 20px;
+}
+
+.continue-button {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.2em;
+}
+
+.continue-button:hover {
+    background-color: #45a049;
+}
+
 /* 컬럼 수에 따른 미니 보드 최적화 */
 .other-players.cols-1 .mini-tetris-board {
     padding: 12px;

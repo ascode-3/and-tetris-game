@@ -131,6 +131,11 @@ io.on('connection', (socket) => {
         if (gameRooms.has(roomId)) {
             const room = gameRooms.get(roomId);
             
+            // 이미 게임이 종료된 경우 처리하지 않음
+            if (room.isGameFinished) {
+                return;
+            }
+            
             // 플레이어의 게임 상태에 게임 오버 표시 추가
             if (room.gameStates.has(socket.id)) {
                 const currentState = room.gameStates.get(socket.id);
@@ -151,6 +156,58 @@ io.on('connection', (socket) => {
                 playerName: room.players.get(socket.id)?.name,
                 gameState: { ...room.gameStates.get(socket.id), isGameOver: true }
             });
+            
+            // 게임 오버되지 않은 플레이어 수 확인
+            let activePlayers = 0;
+            let lastActivePlayer = null;
+            
+            for (const [playerId, gameState] of room.gameStates.entries()) {
+                if (!gameState.isGameOver) {
+                    activePlayers++;
+                    lastActivePlayer = {
+                        id: playerId,
+                        name: room.players.get(playerId)?.name
+                    };
+                }
+            }
+            
+            console.log(`Room ${roomId}: ${activePlayers} active players remaining`);
+            
+            // 게임 오버되지 않은 플레이어가 1명만 남았으면 게임 종료
+            if (activePlayers === 1 && room.players.size > 1) {
+                room.isGameFinished = true;
+                
+                console.log(`Game finished in room ${roomId}. Winner: ${lastActivePlayer.name}`);
+                
+                // 모든 플레이어에게 게임 종료 알림
+                io.to(roomId).emit('gameWin', {
+                    winner: lastActivePlayer,
+                    players: Array.from(room.players.values())
+                });
+            }
+        }
+    });
+    
+    // 게임 재시작
+    socket.on('restartGame', ({ roomId }) => {
+        if (gameRooms.has(roomId)) {
+            const room = gameRooms.get(roomId);
+            
+            // 게임 상태 초기화
+            room.isGameFinished = false;
+            
+            // 모든 플레이어의 게임 상태 초기화
+            for (const [playerId, gameState] of room.gameStates.entries()) {
+                if (gameState) {
+                    gameState.isGameOver = false;
+                    room.gameStates.set(playerId, gameState);
+                }
+            }
+            
+            // 모든 플레이어에게 게임 재시작 알림
+            io.to(roomId).emit('gameRestart');
+            
+            console.log(`Game restarted in room ${roomId}`);
         }
     });
 
