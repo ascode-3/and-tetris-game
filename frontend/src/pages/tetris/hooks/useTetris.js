@@ -3,6 +3,7 @@ import { ROWS, COLS, BLOCK_SIZE, INITIAL_DROP_INTERVAL, LOCK_DELAY, MAX_LOCK_MOV
 import { createPiece, generateBag, checkCollision, getGhostPosition, rotatePiece } from '../utils/tetrisPiece';
 import { clearLines, mergePiece, drawBoard, drawPreviewPiece } from '../utils/tetrisBoard';
 import { updateScoreDisplay, updateLevelDisplay, addLineClearEffects } from '../utils/effects';
+import { useSocket } from '../../../hooks/useSocket';
 
 // Constants
 const KEYS = {
@@ -15,11 +16,15 @@ const KEYS = {
 };
 
 export function useTetris() {
+    // Socket 훅 사용
+    const { sendGameOver } = useSocket();
+    
     // Game state
     const [score, setScore] = useState(0);
     const [level, setLevel] = useState(1);
     const [isGameStarted, setIsGameStarted] = useState(false);
     const [gameOver, setGameOver] = useState(false);
+    const roomIdRef = useRef(window.location.pathname.split('/').pop());
 
     // Refs for game state
     const gridRef = useRef(Array.from({length: ROWS}, () => Array(COLS).fill(0)));
@@ -119,6 +124,8 @@ export function useTetris() {
         // 게임 오버 체크는 currentPiece가 할당된 후에 해야 함
         if (currentPieceRef.current && checkCollision(currentPieceRef.current, gridRef.current)) {
             setGameOver(true);
+            // 게임 오버 이벤트를 서버에 전송
+            sendGameOver(roomIdRef.current, score);
             return false;
         }
         

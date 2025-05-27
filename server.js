@@ -129,9 +129,27 @@ io.on('connection', (socket) => {
     // 게임 오버
     socket.on('gameOver', ({ roomId, score }) => {
         if (gameRooms.has(roomId)) {
+            const room = gameRooms.get(roomId);
+            
+            // 플레이어의 게임 상태에 게임 오버 표시 추가
+            if (room.gameStates.has(socket.id)) {
+                const currentState = room.gameStates.get(socket.id);
+                currentState.isGameOver = true;
+                room.gameStates.set(socket.id, currentState);
+            }
+            
+            // 방의 다른 플레이어들에게 게임 오버 알림
             socket.to(roomId).emit('playerGameOver', {
                 playerId: socket.id,
-                score
+                score,
+                isGameOver: true
+            });
+            
+            // 게임 상태 업데이트도 함께 전송하여 UI가 즉시 업데이트되도록 함
+            socket.to(roomId).emit('gameStateUpdate', {
+                playerId: socket.id,
+                playerName: room.players.get(socket.id)?.name,
+                gameState: { ...room.gameStates.get(socket.id), isGameOver: true }
             });
         }
     });

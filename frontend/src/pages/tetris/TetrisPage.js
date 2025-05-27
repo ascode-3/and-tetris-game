@@ -89,6 +89,32 @@ const TetrisPage = () => {
     }
   }, [socket?.id]);
 
+  // 다른 플레이어의 게임 오버 처리
+  const handlePlayerGameOver = useCallback((data) => {
+    if (data.playerId !== socket?.id) {
+      console.log(`Player ${data.playerId} game over with score: ${data.score}`);
+      
+      setOtherPlayers(prevPlayers => {
+        // 게임 오버된 플레이어 찾기
+        const playerIndex = prevPlayers.findIndex(p => p.id === data.playerId);
+        
+        if (playerIndex > -1) {
+          // 플레이어를 찾았으면 게임 오버 상태 업데이트
+          const newPlayers = [...prevPlayers];
+          newPlayers[playerIndex] = {
+            ...newPlayers[playerIndex],
+            gameState: {
+              ...newPlayers[playerIndex].gameState,
+              isGameOver: true
+            }
+          };
+          return newPlayers;
+        }
+        return prevPlayers;
+      });
+    }
+  }, [socket?.id]);
+
   // Handle player disconnect
   const handlePlayerDisconnect = useCallback((playerId) => {
     setOtherPlayers(prevPlayers => 
@@ -110,6 +136,7 @@ const TetrisPage = () => {
     // Set up event listeners
     socket.on('gameStateUpdate', handleGameStateUpdate);
     socket.on('playerDisconnect', handlePlayerDisconnect);
+    socket.on('playerGameOver', handlePlayerGameOver);
     socket.on('gameStart', () => {
       console.log('Received gameStart event, starting game...');
       startGame();
@@ -120,10 +147,11 @@ const TetrisPage = () => {
       console.log('Cleaning up socket event handlers');
       socket.off('gameStateUpdate', handleGameStateUpdate);
       socket.off('playerDisconnect', handlePlayerDisconnect);
+      socket.off('playerGameOver', handlePlayerGameOver);
       socket.off('gameStart');
       eventHandlersSet.current = false;
     };
-  }, [socket, refsReady, roomId, playerName, startGame, joinRoom, handleGameStateUpdate, handlePlayerDisconnect]);
+  }, [socket, refsReady, roomId, playerName, startGame, joinRoom, handleGameStateUpdate, handlePlayerDisconnect, handlePlayerGameOver]);
 
   // Send game state updates
   useEffect(() => {
@@ -311,12 +339,15 @@ const miniBoard1v1Style = useMemo(() => {
           style={otherPlayersStyle}
         >
           {otherPlayers.map((player) => (
-            <MiniTetrisBoard
-              key={player.id}
-              gameState={player.gameState}
-              playerName={player.name}
-              style={!gameOver && otherPlayers.length === 1 ? miniBoard1v1Style : miniBoardStyle}
-            />
+            // 게임 오버된 플레이어는 표시하지 않음
+            !player.gameState?.isGameOver && (
+              <MiniTetrisBoard
+                key={player.id}
+                gameState={player.gameState}
+                playerName={player.name}
+                style={!gameOver && otherPlayers.length === 1 ? miniBoard1v1Style : miniBoardStyle}
+              />
+            )
           ))}
         </div>
       </div>
