@@ -210,7 +210,7 @@ const TetrisPage = () => {
   const handleLeaveGame = useCallback(() => {
     if (socket) {
       socket.emit('leaveRoom', { roomId });
-      navigate('/lobby');
+      navigate('/rooms');
     }
   }, [socket, roomId, navigate]);
   
@@ -218,8 +218,9 @@ const TetrisPage = () => {
   const handleContinue = useCallback(() => {
     if (socket) {
       socket.emit('restartGame', { roomId });
+      navigate(`/waiting-room/${roomId}`); // 대기실로 이동
     }
-  }, [socket, roomId]);
+  }, [socket, roomId, navigate]);
 
   // 동적 레이아웃 계산 함수 수정
 const calculateOptimalLayout = useCallback((playerCount) => {

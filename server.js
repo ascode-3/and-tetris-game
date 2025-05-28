@@ -195,6 +195,7 @@ io.on('connection', (socket) => {
             
             // 게임 상태 초기화
             room.isGameFinished = false;
+            room.isGameStarted = false; // 게임 시작 상태도 초기화
             
             // 모든 플레이어의 게임 상태 초기화
             for (const [playerId, gameState] of room.gameStates.entries()) {
