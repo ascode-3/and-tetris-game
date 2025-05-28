@@ -30,7 +30,10 @@ const LoginPage = () => {
     justifyContent: 'center',
     alignItems: 'center',
     height: '100vh',
-    backgroundColor: '#f0f0f0',
+    backgroundImage: "url(process.env.PUBLIC_URL + '/images/background image.jpg')",
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
   };
 
   const cardStyle = {

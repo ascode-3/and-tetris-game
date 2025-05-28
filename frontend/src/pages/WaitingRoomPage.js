@@ -2,6 +2,7 @@
 import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import socket from './socket'; // 소켓 import
+import soundManager from '../utils/SoundManager'; // 효과음 매니저 import
 
 const WaitingRoomPage = () => {
   const { roomId } = useParams();
@@ -178,11 +179,14 @@ const WaitingRoomPage = () => {
   }, [roomId, userId, userNickname, joinRoom, leaveRoom, updateParticipants, navigate]);
 
   const handleLeaveRoom = () => {
+    soundManager.play('button'); // 버튼 효과음 재생
     leaveRoom(roomId, userId);
     navigate('/rooms');
   };
 
   const handleStartGame = () => {
+    soundManager.play('button'); // 버튼 효과음 재생
+    
     if (isCreator) {
       console.log('Creator starting game for room:', roomId);
       console.log('Socket connected status:', socket.isConnected);

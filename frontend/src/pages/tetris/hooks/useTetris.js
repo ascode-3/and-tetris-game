@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import soundManager from '../../../utils/SoundManager';
 import { ROWS, COLS, BLOCK_SIZE, INITIAL_DROP_INTERVAL, LOCK_DELAY, MAX_LOCK_MOVES } from '../constants';
 import { createPiece, generateBag, checkCollision, getGhostPosition, rotatePiece } from '../utils/tetrisPiece';
 import { clearLines, mergePiece, drawBoard, drawPreviewPiece } from '../utils/tetrisBoard';
@@ -145,6 +146,10 @@ export function useTetris() {
         if (isLockingRef.current) {
             moveCounterRef.current++;
         }
+        // 좌우 이동 시 효과음 재생
+        if (dir !== 0) {
+            soundManager.play('move');
+        }
         return true;
     }, []);
 
@@ -198,6 +203,9 @@ export function useTetris() {
             currentPieceRef.current.pos.y++;
         }
         currentPieceRef.current.pos.y--;
+        
+        // 착지 효과음 재생
+        soundManager.play('land');
         
         // 바로 그리드에 병합하고 새 피스 생성
         gridRef.current = mergePiece(gridRef.current, currentPieceRef.current);
@@ -304,6 +312,7 @@ export function useTetris() {
                 movePiece(1);
                 break;
             case KEYS.DOWN:
+                soundManager.play('move'); // 소프트 드롭 시 효과음 재생
                 drop();
                 break;
             case KEYS.UP:

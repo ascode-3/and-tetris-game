@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTetris } from './hooks/useTetris';
 import { useSocket } from '../../hooks/useSocket';
 import MiniTetrisBoard from './components/MiniTetrisBoard';
+import soundManager from '../../utils/SoundManager';
 import './TetrisPage.css';
 
 const TetrisPage = () => {
@@ -212,6 +213,7 @@ const TetrisPage = () => {
 
   // 게임 나가기 처리
   const handleLeaveGame = useCallback(() => {
+    soundManager.play('button'); // 버튼 효과음 재생
     if (socket) {
       socket.emit('leaveRoom', { roomId });
       navigate('/rooms');
@@ -220,6 +222,7 @@ const TetrisPage = () => {
   
   // 게임 계속하기 처리
   const handleContinue = useCallback(() => {
+    soundManager.play('button'); // 버튼 효과음 재생
     if (socket) {
       socket.emit('restartGame', { roomId });
       navigate(`/waiting-room/${roomId}`); // 대기실로 이동

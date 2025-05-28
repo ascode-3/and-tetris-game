@@ -5,7 +5,13 @@ export const BLOCK_SIZE = 30;
 
 // Colors for pieces
 export const COLORS = [
-    'cyan', 'blue', 'orange', 'yellow', 'green', 'purple', 'red'
+    '#00FFFF', // cyan - I piece (더 밝은 시안)
+    '#4040FF', // blue - J piece (더 밝은 파랑)
+    '#FF8000', // orange - L piece (더 밝은 주황)
+    '#FFFF00', // yellow - O piece (밝은 노랑)
+    '#00FF00', // green - S piece (밝은 녹색)
+    '#A020F0', // purple - T piece (밝은 보라)
+    '#FF0000'  // red - Z piece (밝은 빨강)
 ];
 
 // Visual settings

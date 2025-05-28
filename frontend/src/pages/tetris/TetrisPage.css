@@ -7,7 +7,11 @@
 
 /* Override body styles in a more React-friendly way */
 :root {
-    background-color: #000;
+    background-image: url('../../../public/images/background\ image.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
     font-family: Arial, sans-serif;
     color: white;
     min-height: 100vh;
