@@ -96,6 +96,9 @@ io.on('connection', (socket) => {
 
         // 게임 시작 상태로 변경
         room.isGameStarted = true;
+        
+        // 테트리스 페이지로 이동한 플레이어 추적을 위한 Set 추가
+        room.movedToTetris = new Set();
 
         // 모든 플레이어에게 게임 시작 알림
         io.to(roomId).emit('moveToTetrisPage', roomId);
@@ -109,6 +112,41 @@ io.on('connection', (socket) => {
         });
 
         console.log(`Game started in room ${roomId} with ${room.players.size} players`);
+        
+        // 5초 후에 모든 플레이어가 테트리스 페이지로 이동했는지 확인
+        setTimeout(() => {
+            if (gameRooms.has(roomId)) {
+                const currentRoom = gameRooms.get(roomId);
+                
+                // 테트리스 페이지로 이동하지 않은 플레이어 확인
+                const notMovedPlayers = Array.from(currentRoom.players.keys())
+                    .filter(playerId => !currentRoom.movedToTetris.has(playerId));
+                
+                if (notMovedPlayers.length > 0) {
+                    console.log(`Room ${roomId}: ${notMovedPlayers.length} players did not move to tetris page`);
+                    
+                    // 이동하지 않은 플레이어들에게 다시 이동 이벤트 전송
+                    notMovedPlayers.forEach(playerId => {
+                        io.to(playerId).emit('moveToTetrisPage', roomId);
+                    });
+                }
+            }
+        }, 5000);
+    });
+
+    // 테트리스 페이지 이동 확인 이벤트 핸들러 추가
+    socket.on('tetrisPageLoaded', ({ roomId }) => {
+        if (gameRooms.has(roomId)) {
+            const room = gameRooms.get(roomId);
+            
+            // 테트리스 페이지로 이동한 플레이어 기록
+            if (!room.movedToTetris) {
+                room.movedToTetris = new Set();
+            }
+            room.movedToTetris.add(socket.id);
+            
+            console.log(`Player ${socket.id} moved to tetris page in room ${roomId}`);
+        }
     });
 
     // 게임 상태 업데이트
@@ -196,6 +234,11 @@ io.on('connection', (socket) => {
             // 게임 상태 초기화
             room.isGameFinished = false;
             room.isGameStarted = false; // 게임 시작 상태도 초기화
+            
+            // 테트리스 페이지 이동 추적 초기화
+            if (room.movedToTetris) {
+                room.movedToTetris.clear();
+            }
             
             // 모든 플레이어의 게임 상태 초기화
             for (const [playerId, gameState] of room.gameStates.entries()) {

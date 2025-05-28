@@ -172,6 +172,10 @@ const TetrisPage = () => {
     console.log('Joining room with playerName:', playerName);
     joinRoom(roomId, playerName);
 
+    // 테트리스 페이지 로드 알림
+    console.log('Sending tetrisPageLoaded event for room:', roomId);
+    socket.emit('tetrisPageLoaded', { roomId });
+
     // Set up event listeners
     socket.on('gameStateUpdate', handleGameStateUpdate);
     socket.on('playerDisconnect', handlePlayerDisconnect);
