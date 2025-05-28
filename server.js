@@ -231,27 +231,49 @@ io.on('connection', (socket) => {
         if (gameRooms.has(roomId)) {
             const room = gameRooms.get(roomId);
             
-            // 게임 상태 초기화
-            room.isGameFinished = false;
-            room.isGameStarted = false; // 게임 시작 상태도 초기화
-            
-            // 테트리스 페이지 이동 추적 초기화
-            if (room.movedToTetris) {
-                room.movedToTetris.clear();
+            // 계속하기를 누른 플레이어 추적을 위한 Set 초기화 또는 생성
+            if (!room.playersRestarted) {
+                room.playersRestarted = new Set();
             }
             
-            // 모든 플레이어의 게임 상태 초기화
-            for (const [playerId, gameState] of room.gameStates.entries()) {
-                if (gameState) {
-                    gameState.isGameOver = false;
-                    room.gameStates.set(playerId, gameState);
+            // 현재 플레이어를 계속하기 누른 플레이어 목록에 추가
+            room.playersRestarted.add(socket.id);
+            
+            console.log(`Player ${socket.id} restarted in room ${roomId}. ${room.playersRestarted.size}/${room.players.size} players restarted.`);
+            
+            // 다른 플레이어들에게 누가 계속하기를 눌렀는지 알림
+            io.to(roomId).emit('playerRestarted', {
+                playerId: socket.id,
+                playerName: room.players.get(socket.id)?.name,
+                restartedCount: room.playersRestarted.size,
+                totalPlayers: room.players.size
+            });
+            
+            // 모든 플레이어가 계속하기를 눌렀는지 확인
+            if (room.playersRestarted.size === room.players.size) {
+                // 게임 상태 초기화
+                room.isGameFinished = false;
+                room.isGameStarted = false; // 게임 시작 상태도 초기화
+                room.playersRestarted.clear(); // 계속하기 누른 플레이어 목록 초기화
+                
+                // 테트리스 페이지 이동 추적 초기화
+                if (room.movedToTetris) {
+                    room.movedToTetris.clear();
                 }
+                
+                // 모든 플레이어의 게임 상태 초기화
+                for (const [playerId, gameState] of room.gameStates.entries()) {
+                    if (gameState) {
+                        gameState.isGameOver = false;
+                        room.gameStates.set(playerId, gameState);
+                    }
+                }
+                
+                // 모든 플레이어에게 게임 재시작 알림
+                io.to(roomId).emit('gameRestart');
+                
+                console.log(`Game fully restarted in room ${roomId} with all players`);
             }
-            
-            // 모든 플레이어에게 게임 재시작 알림
-            io.to(roomId).emit('gameRestart');
-            
-            console.log(`Game restarted in room ${roomId}`);
         }
     });
 

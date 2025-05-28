@@ -14,6 +14,8 @@ const TetrisPage = () => {
   const [gameOver, setGameOver] = useState(false);
   const [isGameWon, setIsGameWon] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [restartedPlayers, setRestartedPlayers] = useState([]);
+  const [totalPlayers, setTotalPlayers] = useState(0);
   const playerName = sessionStorage.getItem('userNickname') || '게스트_' + (sessionStorage.getItem('sessionUserId')?.slice(-4) || '0000');
   const eventHandlersSet = useRef(false);
 
@@ -150,9 +152,27 @@ const TetrisPage = () => {
     setIsGameWon(false);
     setWinner(null);
     setGameOver(false);
+    setRestartedPlayers([]); // 재시작 플레이어 목록 초기화
     if (gameBoardRef.current) {
       startGame();
     }
+  }, []);
+  
+  // 다른 플레이어가 계속하기를 눌렀을 때 처리하는 핸들러
+  const handlePlayerRestarted = useCallback((data) => {
+    console.log(`Player ${data.playerName} restarted. ${data.restartedCount}/${data.totalPlayers} players restarted.`);
+    
+    // 재시작한 플레이어 목록 업데이트
+    setRestartedPlayers(prev => {
+      // 이미 목록에 있는 경우 중복 추가 방지
+      if (prev.some(p => p.id === data.playerId)) {
+        return prev;
+      }
+      return [...prev, { id: data.playerId, name: data.playerName }];
+    });
+    
+    // 전체 플레이어 수 업데이트
+    setTotalPlayers(data.totalPlayers);
   }, []);
 
   // Handle player disconnect
@@ -183,6 +203,7 @@ const TetrisPage = () => {
     socket.on('playerGameOver', handlePlayerGameOver);
     socket.on('gameWin', handleGameWin);
     socket.on('gameRestart', handleGameRestart);
+    socket.on('playerRestarted', handlePlayerRestarted);
     socket.on('gameStart', () => {
       console.log('Received gameStart event, starting game...');
       startGame();
@@ -196,9 +217,10 @@ const TetrisPage = () => {
       socket.off('playerGameOver', handlePlayerGameOver);
       socket.off('gameWin', handleGameWin);
       socket.off('gameRestart', handleGameRestart);
+      socket.off('playerRestarted', handlePlayerRestarted);
       eventHandlersSet.current = false;
     };
-  }, [socket, refsReady, roomId, playerName, startGame, joinRoom, handleGameStateUpdate, handlePlayerDisconnect, handlePlayerGameOver, handleGameWin, handleGameRestart]);
+  }, [socket, refsReady, roomId, playerName, startGame, joinRoom, handleGameStateUpdate, handlePlayerDisconnect, handlePlayerGameOver, handleGameWin, handleGameRestart, handlePlayerRestarted]);
 
   // Send game state updates
   useEffect(() => {
@@ -424,9 +446,28 @@ const miniBoard1v1Style = useMemo(() => {
                 ? '축하합니다! 당신이 우승했습니다!' 
                 : `${winner?.name}님이 우승했습니다!`}
             </p>
+            
+            {/* 계속하기를 누른 플레이어 정보 표시 */}
+            {restartedPlayers.length > 0 && (
+              <div className="restarted-players">
+                <p>계속하기를 누른 플레이어: {restartedPlayers.length}/{totalPlayers}</p>
+                <ul className="restarted-list">
+                  {restartedPlayers.map(player => (
+                    <li key={player.id}>
+                      {player.name} {player.id === socket?.id ? '(나)' : ''}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
             <div className="win-buttons">
-              <button className="continue-button" onClick={handleContinue}>
-                계속하기
+              <button 
+                className="continue-button" 
+                onClick={handleContinue}
+                disabled={restartedPlayers.some(p => p.id === socket?.id)}
+              >
+                {restartedPlayers.some(p => p.id === socket?.id) ? '대기 중...' : '계속하기'}
               </button>
               <button className="leave-button" onClick={handleLeaveGame}>
                 나가기
