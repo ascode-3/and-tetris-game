@@ -37,11 +37,12 @@ const LoginPage = () => {
   };
 
   const cardStyle = {
-    backgroundColor: 'white',
-    padding: '20px',
-    borderRadius: '10px',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    padding: '40px', // 패딩 증가
+    borderRadius: '15px',
     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-    width: '300px',
+    width: '400px', // 너비 증가
+    backdropFilter: 'blur(5px)',
   };
 
   const headerStyle = {
@@ -53,16 +54,18 @@ const LoginPage = () => {
   const tabStyle = (active) => ({
     background: 'none',
     border: 'none',
-    fontSize: '16px',
+    fontSize: '18px', // 폰트 크기 증가
     cursor: 'pointer',
     fontWeight: active ? 'bold' : 'normal',
+    padding: '10px 20px', // 패딩 추가
+    color: active ? '#007bff' : '#333', // 활성 탭 색상 변경
   });
 
   const avatarStyle = {
-    width: '100px',
-    height: '100px',
+    width: '150px', // 아바타 크기 증가
+    height: '150px',
     borderRadius: '50%',
-    marginBottom: '20px',
+    marginBottom: '30px', // 여백 증가
   };
 
   const formStyle = {
@@ -71,25 +74,29 @@ const LoginPage = () => {
   };
 
   const inputStyle = {
-    marginBottom: '10px',
-    padding: '10px',
+    marginBottom: '15px', // 여백 증가
+    padding: '15px', // 패딩 증가
     border: '1px solid #ccc',
-    borderRadius: '5px',
+    borderRadius: '8px',
+    fontSize: '16px', // 폰트 크기 증가
   };
 
   const optionsStyle = {
     display: 'flex',
     justifyContent: 'space-between',
     marginBottom: '20px',
+    color: 'black', // 글씨 색상을 검정색으로 변경
   };
 
   const buttonStyle = {
-    padding: '10px',
+    padding: '15px', // 패딩 증가
     backgroundColor: '#007bff',
     color: 'white',
     border: 'none',
-    borderRadius: '5px',
+    borderRadius: '8px',
     cursor: 'pointer',
+    fontSize: '16px', // 폰트 크기 증가
+    fontWeight: 'bold', // 글자 두께 증가
   };
 
   const footerStyle = {
