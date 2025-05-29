@@ -217,11 +217,23 @@ io.on('connection', (socket) => {
                 
                 console.log(`Game finished in room ${roomId}. Winner: ${lastActivePlayer.name}`);
                 
-                // 모든 플레이어에게 게임 종료 알림
+                // 승자 알림
                 io.to(roomId).emit('gameWin', {
                     winner: lastActivePlayer,
                     players: Array.from(room.players.values())
                 });
+                
+                // 게임 상태 초기화
+                room.isGameStarted = false;
+                room.isGameFinished = true;
+                room.playersRestarted = new Set(); // 계속하기 누른 플레이어 목록 초기화
+                
+                // 테트리스 페이지 이동 추적 초기화
+                if (room.movedToTetris) {
+                    room.movedToTetris.clear();
+                }
+                
+                console.log(`Game ended in room ${roomId}, waiting for players to continue...`);
             }
         }
     });
