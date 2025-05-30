@@ -11,7 +11,7 @@ app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:3000", // React 앱의 주소
+        origin: "*", // 모든 출처 허용 (배포 시에는 보안상 특정 도메인만 허용하는 것이 좋습니다)
         methods: ["GET", "POST"]
     }
 });
@@ -312,6 +312,7 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+const HOST = '0.0.0.0'; // 모든 네트워크 인터페이스에서 수신 대기
+server.listen(PORT, HOST, () => {
+    console.log(`Server is running on http://${HOST}:${PORT}`);
 });

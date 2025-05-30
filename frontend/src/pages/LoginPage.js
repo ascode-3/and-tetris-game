@@ -38,10 +38,10 @@ const LoginPage = () => {
 
   const cardStyle = {
     backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    padding: '40px', // 패딩 증가
-    borderRadius: '15px',
-    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-    width: '400px', // 너비 증가
+    padding: '25px',
+    borderRadius: '12px',
+    boxShadow: '0 3px 6px rgba(0, 0, 0, 0.1)',
+    width: '320px',
     backdropFilter: 'blur(5px)',
   };
 
@@ -54,54 +54,58 @@ const LoginPage = () => {
   const tabStyle = (active) => ({
     background: 'none',
     border: 'none',
-    fontSize: '18px', // 폰트 크기 증가
+    fontSize: '15px',
     cursor: 'pointer',
     fontWeight: active ? 'bold' : 'normal',
-    padding: '10px 20px', // 패딩 추가
-    color: active ? '#007bff' : '#333', // 활성 탭 색상 변경
+    padding: '6px 14px',
+    color: active ? '#007bff' : '#333',
   });
 
   const avatarStyle = {
-    width: '150px', // 아바타 크기 증가
-    height: '150px',
+    width: '60px',
+    height: '60px',
     borderRadius: '50%',
-    marginBottom: '30px', // 여백 증가
+    marginBottom: '12px',
+    objectFit: 'cover',
   };
 
   const formStyle = {
     display: 'flex',
     flexDirection: 'column',
+    gap: '10px',
   };
 
   const inputStyle = {
-    marginBottom: '15px', // 여백 증가
-    padding: '15px', // 패딩 증가
-    border: '1px solid #ccc',
-    borderRadius: '8px',
-    fontSize: '16px', // 폰트 크기 증가
+    width: '100%',
+    padding: '8px 10px',
+    margin: '4px 0',
+    border: '1px solid #ddd',
+    borderRadius: '4px',
+    fontSize: '13px',
   };
 
   const optionsStyle = {
     display: 'flex',
     justifyContent: 'space-between',
-    marginBottom: '20px',
-    color: 'black', // 글씨 색상을 검정색으로 변경
+    marginBottom: '15px',
+    color: 'black', 
   };
 
   const buttonStyle = {
-    padding: '15px', // 패딩 증가
+    width: '100%',
+    padding: '8px',
     backgroundColor: '#007bff',
     color: 'white',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '4px',
     cursor: 'pointer',
-    fontSize: '16px', // 폰트 크기 증가
-    fontWeight: 'bold', // 글자 두께 증가
+    fontSize: '13px',
+    marginTop: '6px',
   };
 
   const footerStyle = {
     textAlign: 'center',
-    marginTop: '20px',
+    marginTop: '15px',
   };
 
   return (
@@ -112,7 +116,7 @@ const LoginPage = () => {
           <button style={tabStyle(isRegister)} onClick={toggleForm}>회원가입</button>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <img src="/api/placeholder/100/100" alt="User Avatar" style={avatarStyle} />
+          <img src="/images/login.a.png" alt="User Avatar" style={avatarStyle} />
         </div>
         <form style={formStyle} onSubmit={(e) => e.preventDefault()}>
           <input 

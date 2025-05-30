@@ -190,3 +190,7 @@ git push origin main
 
 
 https://and-tetris.web.app
+
+
+npm run build
+firebase deploy

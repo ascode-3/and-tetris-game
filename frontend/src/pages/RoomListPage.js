@@ -79,72 +79,82 @@ const RoomListPage = () => {
   return (
     <div style={{ 
       padding: '20px',
-      backgroundColor: '#f5f5f5',
-      minHeight: '100vh'
+      minHeight: '100vh',
+      backgroundImage: `url('/images/background image.jpg')`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundAttachment: 'fixed',
+      backgroundRepeat: 'no-repeat'
     }}>
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
         marginBottom: '20px',
-        backgroundColor: 'white',
+        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        backdropFilter: 'blur(5px)',
         padding: '15px',
         borderRadius: '8px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
         <h1 style={{ margin: 0 }}>방 목록</h1>
         <div>
-          <button 
-            onClick={handleCreateRoom}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              marginRight: '10px',
-              fontSize: '16px',
-              transition: 'background-color 0.2s',
-              ':hover': {
-                backgroundColor: '#218838'
-              }
-            }}
-          >
-            방 생성
-          </button>
-          <button 
-            onClick={handleReset}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontSize: '16px',
-              transition: 'background-color 0.2s',
-              ':hover': {
-                backgroundColor: '#c82333'
-              }
-            }}
-          >
-            초기화
-          </button>
+<div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              onClick={handleCreateRoom}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontSize: '16px',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                ':hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                  backgroundColor: '#218838'
+                },
+                ':active': {
+                  transform: 'translateY(0)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }
+              }}
+            >
+              방 생성
+            </button>
+            <button 
+              onClick={handleReset}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontSize: '16px',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                ':hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                  backgroundColor: '#c82333'
+                },
+                ':active': {
+                  transform: 'translateY(0)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }
+              }}
+            >
+              초기화
+            </button>
+          </div>
         </div>
       </div>
 
-      {rooms.length === 0 ? (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: '40px', 
-          backgroundColor: 'white', 
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <p style={{ fontSize: '16px', color: '#666' }}>생성된 방이 없습니다.</p>
-        </div>
-      ) : (
+      {rooms.length > 0 ? (
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
@@ -155,26 +165,31 @@ const RoomListPage = () => {
               key={room.id}
               onClick={() => handleJoinRoom(room.id)}
               style={{ 
-                backgroundColor: 'white',
-                border: '1px solid #eee',
-                borderRadius: '8px',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(5px)',
+                borderRadius: '10px',
                 padding: '20px',
                 cursor: 'pointer',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
                 transition: 'all 0.3s ease',
                 ':hover': {
                   transform: 'translateY(-5px)',
-                  boxShadow: '0 5px 15px rgba(0,0,0,0.2)'
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  boxShadow: '0 6px 12px rgba(0, 0, 0, 0.3)'
+                },
+                ':active': {
+                  transform: 'translateY(0)',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
                 }
               }}
             >
-              <h3 style={{ margin: '0 0 10px 0', color: '#333' }}>방 ID: {room.id}</h3>
-              <p style={{ margin: '5px 0', color: '#666' }}>참가자: {room.participantCount}명</p>
-              <p style={{ margin: '5px 0', color: '#666' }}>방장: {room.creatorNickname}</p>
+              <h3 style={{ margin: '0 0 10px 0', color: '#000000', fontWeight: '700' }}>방 ID: {room.id}</h3>
+              <p style={{ margin: '5px 0', color: '#000000', fontWeight: '600' }}>참가자: {room.participantCount}명</p>
+              <p style={{ margin: '5px 0', color: '#000000', fontWeight: '600' }}>방장: {room.creatorNickname}</p>
             </div>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

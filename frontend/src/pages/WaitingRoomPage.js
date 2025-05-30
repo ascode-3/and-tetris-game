@@ -193,12 +193,14 @@ const WaitingRoomPage = () => {
       
       if (!socket.isConnected) {
         console.error('Socket is not connected');
-        alert('서버와의 연결이 끊어졌습니다. 페이지를 새로고침해주세요.');
+        setErrorMessage('서버와의 연결이 끊어졌습니다. 페이지를 새로고침해주세요.');
+        setTimeout(() => setErrorMessage(''), 2000);
         return;
       }
 
       if (participants.length < 2) {
-        setErrorMessage('게임 시작은 최소 2명부터 가능합니다.');
+        setErrorMessage('시작은 최소 2명부터 가능합니다.');
+        setTimeout(() => setErrorMessage(''), 2000);
         return;
       }
 
@@ -221,7 +223,7 @@ const WaitingRoomPage = () => {
       <h1>대기실</h1>
       <h2>방 ID: {roomId}</h2>
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, maxWidth: '250px' }}>
           <h3>참가자 목록 ({participants.length}명)</h3>
           <ul style={{ listStyleType: 'none', padding: 0 }}>
             {participantDetails.map(participant => (
@@ -230,12 +232,22 @@ const WaitingRoomPage = () => {
                 style={{
                   margin: '8px 0',
                   padding: '8px',
-                  backgroundColor: participant.isCreator ? '#fff3cd' : '#f8f9fa',
+                  backgroundColor: 'rgba(255, 255, 255, 0.7)', // 흰색에 70% 투명도
                   borderRadius: '4px',
-                  border: participant.id === userId ? '2px solid #007bff' : '1px solid #ddd'
+                  border: participant.id === userId ? '2px solid #007bff' : '1px solid rgba(0, 0, 0, 0.1)',
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
                 }}
               >
-                {participant.nickname} {participant.isCreator ? '(방장)' : ''} {participant.id === userId ? ' (나)' : ''}
+                <div style={{ position: 'relative' }}>
+                  <span style={{ 
+                    position: 'relative', 
+                    zIndex: 1,
+                    color: '#333', // 글자 색상 명시
+                    textShadow: '0 1px 1px rgba(0, 0, 0, 0.1)' // 글자 가독성 향상을 위한 그림자
+                  }}>
+                    {participant.nickname} {participant.isCreator ? '(방장)' : ''} {participant.id === userId ? ' (나)' : ''}
+                  </span>
+                </div>
               </li>
             ))}
           </ul>
@@ -257,7 +269,7 @@ const WaitingRoomPage = () => {
               게임 시작
             </button>
               {errorMessage && (
-                <p style={{ color: 'red', marginTop: '10px' }}>
+                <p style={{ color: 'red', marginTop: '15px' }}>
                   {errorMessage}
                 </p>
               )}
