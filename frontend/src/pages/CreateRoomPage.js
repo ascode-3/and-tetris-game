@@ -1,20 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import socketManager from './socket';
 
 const CreateRoomPage = () => {
   const navigate = useNavigate();
 
+  const [isCreating, setIsCreating] = useState(false);
+  
+  useEffect(() => {
+    // 방 생성 응답 이벤트 리스너 등록
+    const handleRoomCreated = ({roomId, success}) => {
+      console.log('Room created response:', roomId, success);
+      setIsCreating(false);
+      
+      if (success) {
+        // 생성한 방의 대기실로 이동
+        navigate(`/waiting-room/${roomId}`);
+      } else {
+        alert('방 생성에 실패했습니다. 다시 시도해주세요.');
+      }
+    };
+    
+    socketManager.on('roomCreated', handleRoomCreated);
+    
+    return () => {
+      socketManager.off('roomCreated', handleRoomCreated);
+    };
+  }, [navigate]);
+
   const handleCreateRoom = () => {
-    // 1) 새 방 ID 생성
-    const roomId = Math.random().toString(36).substr(2, 5).toUpperCase();
-
-    // 2) 로컬스토리지의 rooms 배열 업데이트 (방 목록에 표시하기 위함)
-    const rooms = JSON.parse(localStorage.getItem('rooms') || '[]');
-    if (!rooms.includes(roomId)) {
-      localStorage.setItem('rooms', JSON.stringify([...rooms, roomId]));
-    }
-
-    // 3) 세션 스토리지에서 사용자 ID와 닉네임 가져오기
+    // 세션 스토리지에서 사용자 ID와 닉네임 가져오기
     let userId = sessionStorage.getItem('sessionUserId');
     let userNickname = sessionStorage.getItem('userNickname');
     
@@ -30,21 +45,9 @@ const CreateRoomPage = () => {
       sessionStorage.setItem('userNickname', userNickname);
     }
 
-    // 4) roomsData 초기화 - 방장을 참가자로 등록하고 닉네임 정보 추가
-    const roomsData = JSON.parse(localStorage.getItem('roomsData') || '{}');
-    roomsData[roomId] = {
-      participants: [userId],  // 방장을 참가자로 추가
-      creator: userId,         // 방장 정보 기록
-      participantDetails: {    // 참가자 상세 정보 저장
-        [userId]: {
-          nickname: userNickname
-        }
-      }
-    };
-    localStorage.setItem('roomsData', JSON.stringify(roomsData));
-
-    // 5) 생성한 방의 대기실로 이동
-    navigate(`/waiting-room/${roomId}`);
+    // 서버에 방 생성 요청
+    setIsCreating(true);
+    socketManager.emit('createRoom', { playerName: userNickname });
   };
 
   return (

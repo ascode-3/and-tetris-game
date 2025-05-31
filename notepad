@@ -192,5 +192,10 @@ git push origin main
 https://and-tetris.web.app
 
 
+cd frontend
 npm run build
 firebase deploy
+
+
+ㅅㅄㅄㅄㅄㅄㅄ
+아니 왜 로컬 네트워크 진짜!!!!ㅠㅠ
