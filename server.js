@@ -22,6 +22,57 @@ const gameRooms = new Map();
 // 소켓 연결 처리
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
+    
+    // 방 목록 요청 처리
+    socket.on('getRoomList', () => {
+        console.log('Room list requested by', socket.id);
+        const roomList = [];
+        
+        // 게임방 정보를 가공하여 전송
+        for (const [roomId, room] of gameRooms.entries()) {
+            // 시작된 게임은 목록에서 제외
+            if (room.isGameStarted) continue;
+            
+            const creatorId = Array.from(room.players.keys())[0] || '';
+            const creatorName = room.players.get(creatorId)?.name || '알 수 없음';
+            
+            roomList.push({
+                id: roomId,
+                participantCount: room.players.size,
+                creatorNickname: creatorName
+            });
+        }
+        
+        socket.emit('roomListResponse', roomList);
+    });
+    
+    // 방 생성 처리
+    socket.on('createRoom', ({ playerName }) => {
+        // 방 ID 생성
+        const roomId = Math.random().toString(36).substr(2, 5).toUpperCase();
+        
+        // 방 생성
+        gameRooms.set(roomId, {
+            players: new Map(),
+            gameStates: new Map(),
+            isGameStarted: false,
+            creator: socket.id
+        });
+        
+        console.log(`Room ${roomId} created by ${playerName} (${socket.id})`);
+        
+        // 방 생성자에게 방 ID 응답
+        socket.emit('roomCreated', { roomId, success: true });
+        
+        // 다른 모든 사용자에게 새 방이 생성됨을 알림
+        socket.broadcast.emit('roomListUpdated');
+    });
+    
+    // 방 존재 확인 요청 처리
+    socket.on('checkRoomExists', ({ roomId }) => {
+        const exists = gameRooms.has(roomId);
+        socket.emit('roomExistsResponse', { roomId, exists });
+    });
 
     // 게임방 참가
     socket.on('joinRoom', ({ roomId, playerName }) => {
@@ -32,7 +83,8 @@ io.on('connection', (socket) => {
             gameRooms.set(roomId, {
                 players: new Map(),
                 gameStates: new Map(),
-                isGameStarted: false
+                isGameStarted: false,
+                creator: socket.id
             });
         }
 
@@ -57,7 +109,8 @@ io.on('connection', (socket) => {
 
         socket.emit('roomState', {
             players: currentPlayers,
-            gameStates: currentGameStates
+            gameStates: currentGameStates,
+            creator: room.creator
         });
     });
 
@@ -289,6 +342,41 @@ io.on('connection', (socket) => {
         }
     });
 
+    // 방 떠나기 처리
+    socket.on('leaveRoom', ({ roomId }) => {
+        if (!gameRooms.has(roomId)) return;
+        
+        const room = gameRooms.get(roomId);
+        if (room.players.has(socket.id)) {
+            const playerName = room.players.get(socket.id)?.name || '알 수 없음';
+            console.log(`Player ${playerName} (${socket.id}) leaving room ${roomId}`);
+            
+            // 방장이 나갈 경우 새 방장 지정
+            const wasCreator = room.creator === socket.id;
+            room.players.delete(socket.id);
+            room.gameStates.delete(socket.id);
+            
+            // 방의 다른 플레이어들에게 알림
+            io.to(roomId).emit('playerDisconnect', socket.id);
+            
+            // 방에 플레이어가 없으면 방 삭제
+            if (room.players.size === 0) {
+                gameRooms.delete(roomId);
+                io.emit('roomListUpdated'); // 방 목록 갱신 알림
+            } else if (wasCreator) {
+                // 새 방장 지정 (첫 번째 플레이어)
+                const newCreator = Array.from(room.players.keys())[0];
+                room.creator = newCreator;
+                
+                // 새 방장 알림
+                io.to(roomId).emit('creatorChanged', { newCreatorId: newCreator });
+            }
+            
+            // 소켓에서 해당 방 떠나기
+            socket.leave(roomId);
+        }
+    });
+    
     // 연결 해제
     socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.id}`);
@@ -296,6 +384,7 @@ io.on('connection', (socket) => {
         // 모든 게임방에서 플레이어 제거
         for (const [roomId, room] of gameRooms.entries()) {
             if (room.players.has(socket.id)) {
+                const wasCreator = room.creator === socket.id;
                 room.players.delete(socket.id);
                 room.gameStates.delete(socket.id);
                 
@@ -305,6 +394,14 @@ io.on('connection', (socket) => {
                 // 방에 플레이어가 없으면 방 삭제
                 if (room.players.size === 0) {
                     gameRooms.delete(roomId);
+                    io.emit('roomListUpdated'); // 방 목록 갱신 알림
+                } else if (wasCreator) {
+                    // 새 방장 지정 (첫 번째 플레이어)
+                    const newCreator = Array.from(room.players.keys())[0];
+                    room.creator = newCreator;
+                    
+                    // 새 방장 알림
+                    io.to(roomId).emit('creatorChanged', { newCreatorId: newCreator });
                 }
             }
         }

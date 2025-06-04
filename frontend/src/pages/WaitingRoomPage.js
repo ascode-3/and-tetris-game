@@ -26,100 +26,54 @@ const WaitingRoomPage = () => {
   const [participantDetails, setParticipantDetails] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // 방 참가 처리 - 서버에 요청을 보내고 서버에서 방 상태를 받아옴
   const joinRoom = useCallback((roomId, userId, nickname) => {
-    const roomsData = JSON.parse(localStorage.getItem('roomsData') || '{}');
-
-    if (!roomsData[roomId]) {
-      const rooms = JSON.parse(localStorage.getItem('rooms') || '[]');
-      if (!rooms.includes(roomId)) {
-        localStorage.setItem('rooms', JSON.stringify([...rooms, roomId]));
-      }
-
-      roomsData[roomId] = {
-        participants: [],
-        participantDetails: {},
-        creator: userId
-      };
-    }
-
-    if (!roomsData[roomId].participants.includes(userId)) {
-      roomsData[roomId].participants.push(userId);
-    }
-
-    roomsData[roomId].participantDetails[userId] = { nickname };
-    localStorage.setItem('roomsData', JSON.stringify(roomsData));
-
-    if (roomsData[roomId].creator === userId) {
-      setIsCreator(true);
-    }
+    console.log(`Joining room ${roomId} with nickname ${nickname} and user ID ${userId}`);
+    socket.emit('joinRoom', { roomId, playerName: nickname });
   }, []);
 
   const leaveRoom = useCallback((roomId, userId) => {
-    const roomsData = JSON.parse(localStorage.getItem('roomsData') || '{}');
-
-    if (roomsData[roomId]) {
-      const wasCreator = roomsData[roomId].creator === userId;
-
-      roomsData[roomId].participants = roomsData[roomId].participants.filter(id => id !== userId);
-
-      if (roomsData[roomId].participantDetails[userId]) {
-        delete roomsData[roomId].participantDetails[userId];
-      }
-
-      if (wasCreator && roomsData[roomId].participants.length > 0) {
-        const newCreatorIndex = Math.floor(Math.random() * roomsData[roomId].participants.length);
-        const newCreator = roomsData[roomId].participants[newCreatorIndex];
-        roomsData[roomId].creator = newCreator;
-      }
-
-      if (roomsData[roomId].participants.length === 0) {
-        const rooms = JSON.parse(localStorage.getItem('rooms') || '[]');
-        const updatedRooms = rooms.filter(id => id !== roomId);
-        localStorage.setItem('rooms', JSON.stringify(updatedRooms));
-        delete roomsData[roomId];
-      }
-
-      localStorage.setItem('roomsData', JSON.stringify(roomsData));
-    }
+    console.log(`Leaving room ${roomId} with user ID ${userId}`);
+    socket.emit('leaveRoom', { roomId });
   }, []);
 
-  const updateParticipants = useCallback(() => {
-    const roomsData = JSON.parse(localStorage.getItem('roomsData') || '{}');
-
-    if (roomsData[roomId]) {
-      const uniqueParticipants = [...new Set(roomsData[roomId].participants || [])];
-
-      if (uniqueParticipants.length !== roomsData[roomId].participants.length) {
-        roomsData[roomId].participants = uniqueParticipants;
-        localStorage.setItem('roomsData', JSON.stringify(roomsData));
-      }
-
-      setParticipants(uniqueParticipants);
-      setIsCreator(roomsData[roomId].creator === userId);
-
-      const details = uniqueParticipants.map(participantId => ({
-        id: participantId,
-        nickname: roomsData[roomId].participantDetails?.[participantId]?.nickname || `알 수 없음_${participantId.slice(-4)}`,
-        isCreator: participantId === roomsData[roomId].creator
-      }));
-
-      setParticipantDetails(details);
-    } else {
-      setParticipants([]);
-      setParticipantDetails([]);
-    }
-  }, [roomId, userId]);
+  // 참가자 정보 업데이트는 이제 서버에서 roomState 이벤트로 받아오기 때문에 이 함수는 사용하지 않습니다.
 
   useEffect(() => {
     console.log('WaitingRoomPage mounted for room:', roomId);
     
     joinRoom(roomId, userId, userNickname);
-    updateParticipants();
-    const interval = setInterval(updateParticipants, 1000);
 
     // 방 참가
     console.log('Emitting joinRoom event for room:', roomId);
     socket.emit('joinRoom', { roomId, playerName: userNickname });
+
+    // 방 상태 정보 수신 이벤트 핸들러
+    const handleRoomState = (data) => {
+      console.log('Received room state:', data);
+      if (data.players) {
+        // 참가자 정보 업데이트
+        setParticipants(data.players.map(player => player.id));
+        setParticipantDetails(data.players.map(player => ({
+          id: player.id,
+          nickname: player.name || `알 수 없음_${player.id.slice(-4)}`,
+          isCreator: player.id === data.creator
+        })));
+        
+        // 방장 여부 업데이트
+        setIsCreator(data.creator === userId);
+      }
+    };
+    
+    // 방장 변경 이벤트 핸들러
+    const handleCreatorChanged = (data) => {
+      console.log('Creator changed:', data);
+      setIsCreator(data.newCreatorId === userId);
+    };
+    
+    // 이벤트 리스너 등록
+    socket.on('roomState', handleRoomState);
+    socket.on('creatorChanged', handleCreatorChanged);
 
     // 게임 시작 이벤트 리스너 등록
     const handleMoveToTetris = (receivedRoomId) => {
@@ -171,12 +125,15 @@ const WaitingRoomPage = () => {
       leaveRoom(roomId, userId);
       
       socket.off('moveToTetrisPage', handleMoveToTetris);
-      console.log('🎯 moveToTetrisPage event listener removed');
+      console.log('🏁 moveToTetrisPage event listener removed');
       
       socket.off('gameStartConfirmation', handleGameStartConfirmation);
-      console.log('🎯 gameStartConfirmation event listener removed');
+      console.log('🏁 gameStartConfirmation event listener removed');
+      
+      socket.off('roomState', handleRoomState);
+      socket.off('creatorChanged', handleCreatorChanged);
     };
-  }, [roomId, userId, userNickname, joinRoom, leaveRoom, updateParticipants, navigate]);
+  }, [roomId, userId, userNickname, joinRoom, leaveRoom, navigate]);
 
   const handleLeaveRoom = () => {
     soundManager.play('button'); // 버튼 효과음 재생

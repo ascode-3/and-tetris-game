@@ -15,27 +15,34 @@ const RoomListPage = () => {
   }, [navigate]);
 
   const loadRooms = () => {
-    const storedRooms = JSON.parse(localStorage.getItem('rooms') || '[]');
-    const roomsData = JSON.parse(localStorage.getItem('roomsData') || '{}');
-    const validRooms = storedRooms.filter(roomId => roomsData[roomId]);
-
-    if (validRooms.length !== storedRooms.length) {
-      localStorage.setItem('rooms', JSON.stringify(validRooms));
-    }
-
-    const roomsWithInfo = validRooms.map(roomId => {
-      const roomData = roomsData[roomId];
-      const creatorId = roomData?.creator;
-      const creatorNickname = roomData?.participantDetails?.[creatorId]?.nickname || '알 수 없음';
-      return {
-        id: roomId,
-        participantCount: roomData?.participants?.length || 0,
-        creatorNickname
-      };
-    });
-
-    setRooms(roomsWithInfo);
+    // 서버에서 방 목록 요청
+    socketManager.emit('getRoomList');
   };
+  
+  // 서버로부터 방 목록 응답 수신 시 처리
+  useEffect(() => {
+    // 방 목록 응답 이벤트 리스너
+    const handleRoomListResponse = (roomList) => {
+      console.log('Received room list from server:', roomList);
+      setRooms(roomList);
+    };
+    
+    // 방 목록 갱신 알림 이벤트 리스너
+    const handleRoomListUpdated = () => {
+      console.log('Room list updated notification received');
+      loadRooms(); // 방 목록 다시 요청
+    };
+    
+    // 이벤트 리스너 등록
+    socketManager.on('roomListResponse', handleRoomListResponse);
+    socketManager.on('roomListUpdated', handleRoomListUpdated);
+    
+    return () => {
+      // 컴포넌트 언마운트 시 이벤트 리스너 제거
+      socketManager.off('roomListResponse', handleRoomListResponse);
+      socketManager.off('roomListUpdated', handleRoomListUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     loadRooms();
@@ -54,15 +61,11 @@ const RoomListPage = () => {
   const handleReset = () => {
     if (window.confirm('정말로 모든 대기실을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
       try {
-        // 모든 방 데이터 초기화
-        localStorage.setItem('rooms', '[]');
-        localStorage.setItem('roomsData', '{}');
+        // 서버에 방 초기화 요청
+        socketManager.emit('resetRooms');
         
         // rooms 상태 초기화
         setRooms([]);
-        
-        // 소켓 이벤트 발생 (다른 클라이언트들에게 알림)
-        socketManager.emit('resetRooms');
         
         // 성공 메시지
         alert('모든 대기실이 성공적으로 초기화되었습니다.');
