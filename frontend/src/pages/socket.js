@@ -11,6 +11,14 @@ class SocketManager {
     this.initialize();
   }
 
+  get connected() {
+    return this.socket ? this.socket.connected : false;
+  }
+
+  get id() {
+    return this.socket ? this.socket.id : null;
+  }
+
   initialize() {
     console.log('Initializing socket connection to:', SOCKET_SERVER_URL);
     
