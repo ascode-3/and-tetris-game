@@ -22,95 +22,61 @@ const WaitingRoomPage = () => {
   }, [userId]);
 
   // 소켓 ID를 저장할 상태
-  const [socketId, setSocketId] = useState(null);
+  const [socketId, setSocketId] = useState(socket.id || null);
   const [participants, setParticipants] = useState([]);
   const [isCreator, setIsCreator] = useState(false);
   const [participantDetails, setParticipantDetails] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
-  const [isSocketReady, setIsSocketReady] = useState(false);
 
-  // 소켓 연결 상태 확인 및 대기 함수
-  const waitForSocketConnection = useCallback(() => {
-    return new Promise((resolve) => {
-      if (socket.connected && socket.id) {
-        resolve(socket.id);
-        return;
-      }
-
-      const checkConnection = () => {
-        if (socket.connected && socket.id) {
-          resolve(socket.id);
-        } else {
-          setTimeout(checkConnection, 100);
-        }
-      };
-      
-      checkConnection();
-    });
+  // 방 참가 처리 - 유저 ID 추가
+  const joinRoom = useCallback((roomId, nickname, userId) => {
+    console.log(`Joining room ${roomId} with nickname ${nickname}, userId: ${userId}`);
+    socket.emit('joinRoom', { roomId, playerName: nickname, userId });
   }, []);
 
-  // 방 참가 처리
-  const joinRoom = useCallback(async (roomId, nickname) => {
-    console.log(`Attempting to join room ${roomId} with nickname ${nickname}`);
-    
-    try {
-      // 소켓 연결이 완료될 때까지 대기
-      const currentSocketId = await waitForSocketConnection();
-      console.log(`Socket ready with ID: ${currentSocketId}, joining room ${roomId}`);
-      
-      socket.emit('joinRoom', { roomId, playerName: nickname });
-    } catch (error) {
-      console.error('Error joining room:', error);
-      setErrorMessage('서버 연결 중 오류가 발생했습니다.');
-    }
-  }, [waitForSocketConnection]);
-
-  const leaveRoom = useCallback((roomId) => {
-    console.log(`Leaving room ${roomId}`);
-    if (socket.connected) {
-      socket.emit('leaveRoom', { roomId });
-    }
+  const leaveRoom = useCallback((roomId, userId) => {
+    console.log(`Leaving room ${roomId}, userId: ${userId}`);
+    socket.emit('leaveRoom', { roomId, userId });
   }, []);
 
-  // 소켓 연결 이벤트 핸들러
+  // 소켓 연결 이벤트 핸들러 - socketId 업데이트
   const handleConnect = useCallback(() => {
     console.log('Socket connected with ID:', socket.id);
     setSocketId(socket.id);
-    setIsSocketReady(true);
   }, []);
 
   // 소켓 연결 해제 이벤트 핸들러
   const handleDisconnect = useCallback(() => {
     console.log('Socket disconnected');
     setSocketId(null);
-    setIsSocketReady(false);
   }, []);
 
   // 새 플레이어가 방에 참가했을 때의 이벤트 핸들러
   const handlePlayerJoined = useCallback((playerData) => {
     console.log('New player joined:', playerData);
     
-    // 중복 체크 로직 추가 (소켓 ID 기반)
+    // 중복 체크 로직 추가 (유저 ID 기반)
     setParticipants(prev => {
-      if (prev.includes(playerData.id)) {
-        console.log('Player already exists in participants:', playerData.id);
+      if (prev.includes(playerData.userId)) {
+        console.log('Player already exists in participants:', playerData.userId);
         return prev;
       }
-      return [...prev, playerData.id];
+      return [...prev, playerData.userId];
     });
     
     setParticipantDetails(prev => {
-      const existingPlayer = prev.find(p => p.socketId === playerData.id);
+      const existingPlayer = prev.find(p => p.userId === playerData.userId);
       if (existingPlayer) {
-        console.log('Player already exists in participant details:', playerData.id);
+        console.log('Player already exists in participant details:', playerData.userId);
         return prev;
       }
       return [
         ...prev,
         {
-          id: playerData.id,
-          socketId: playerData.id,
-          nickname: playerData.name || `알 수 없음_${playerData.id.slice(-4)}`,
+          id: playerData.userId,
+          userId: playerData.userId,
+          socketId: playerData.socketId,
+          nickname: playerData.name || `알 수 없음_${playerData.userId.slice(-4)}`,
           isCreator: false
         }
       ];
@@ -118,77 +84,62 @@ const WaitingRoomPage = () => {
   }, []);
 
   // 플레이어가 방을 나갔을 때의 이벤트 핸들러
-  const handlePlayerDisconnect = useCallback((playerSocketId) => {
-    console.log('Player left:', playerSocketId);
-    setParticipants(prev => prev.filter(socketId => socketId !== playerSocketId));
-    setParticipantDetails(prev => prev.filter(p => p.socketId !== playerSocketId));
+  const handlePlayerDisconnect = useCallback((playerUserId) => {
+    console.log('Player left:', playerUserId);
+    setParticipants(prev => prev.filter(userId => userId !== playerUserId));
+    setParticipantDetails(prev => prev.filter(p => p.userId !== playerUserId));
   }, []);
 
-  // 방 상태 정보 수신 이벤트 핸들러
+  // 방 상태 정보 수신 이벤트 핸들러 - 유저 ID 기반으로 변경
   const handleRoomState = useCallback((data) => {
-    const currentSocketId = socket.id;
-    
     console.log('handleRoomState - Received data:', data);
-    console.log('handleRoomState - Current socketId:', currentSocketId);
+    console.log('handleRoomState - Current userId:', userId);
     console.log('handleRoomState - Room creator:', data.creator);
-    
-    if (!currentSocketId) {
-      console.warn('handleRoomState called but socket.id is null/undefined');
-      return;
-    }
-    
-    console.log('handleRoomState - Is current socket creator?', data.creator === currentSocketId);
+    console.log('handleRoomState - Is current user creator?', data.creator === userId);
     
     if (data.players) {
       // 참가자 정보 업데이트 (중복 제거 로직 포함)
-      const uniquePlayerSocketIds = [...new Set(data.players.map(player => player.id))];
+      const uniquePlayerUserIds = [...new Set(data.players.map(player => player.userId))];
       const uniquePlayerDetails = data.players.reduce((acc, player) => {
-        const existingPlayer = acc.find(p => p.socketId === player.id);
+        const existingPlayer = acc.find(p => p.userId === player.userId);
         if (!existingPlayer) {
           acc.push({
-            id: player.id,
-            socketId: player.id,
-            nickname: player.name || `알 수 없음_${player.id.slice(-4)}`,
-            isCreator: player.id === data.creator
+            id: player.userId,
+            userId: player.userId,
+            socketId: player.socketId,
+            nickname: player.name || `알 수 없음_${player.userId.slice(-4)}`,
+            isCreator: player.userId === data.creator
           });
         }
         return acc;
       }, []);
       
-      setParticipants(uniquePlayerSocketIds);
+      setParticipants(uniquePlayerUserIds);
       setParticipantDetails(uniquePlayerDetails);
       
-      // 방장 여부 업데이트
-      const isUserCreator = data.creator === currentSocketId;
+      // 방장 여부 업데이트 (유저 ID 기반)
+      const isUserCreator = data.creator === userId;
       console.log('handleRoomState - Setting isCreator to:', isUserCreator);
       setIsCreator(isUserCreator);
     }
-  }, []);
+  }, [userId]);
 
-  // 방장 변경 이벤트 핸들러
+  // 방장 변경 이벤트 핸들러 - 유저 ID 기반으로 변경
   const handleCreatorChanged = useCallback((data) => {
-    const currentSocketId = socket.id;
-    
     console.log('handleCreatorChanged - New creator ID:', data.newCreatorId);
-    console.log('handleCreatorChanged - Current socketId:', currentSocketId);
-    
-    if (!currentSocketId) {
-      console.warn('handleCreatorChanged called but socket.id is null/undefined');
-      return;
-    }
-    
-    const isNowCreator = data.newCreatorId === currentSocketId;
-    console.log('handleCreatorChanged - Is current socket now creator?', isNowCreator);
+    console.log('handleCreatorChanged - Current userId:', userId);
+    const isNowCreator = data.newCreatorId === userId;
+    console.log('handleCreatorChanged - Is current user now creator?', isNowCreator);
     setIsCreator(isNowCreator);
     
     // 참가자 세부정보에서 방장 상태 업데이트
     setParticipantDetails(prev => 
       prev.map(participant => ({
         ...participant,
-        isCreator: participant.socketId === data.newCreatorId
+        isCreator: participant.userId === data.newCreatorId
       }))
     );
-  }, []);
+  }, [userId]);
 
   // 게임 시작 이벤트 리스너
   const handleMoveToTetris = useCallback((receivedRoomId) => {
@@ -217,41 +168,28 @@ const WaitingRoomPage = () => {
     }
   }, [navigate]);
 
-  // 초기 소켓 설정 및 방 참가 처리
   useEffect(() => {
     console.log('WaitingRoomPage mounted for room:', roomId);
     
-    // 소켓 연결 상태 확인
-    const initializeSocket = async () => {
-      try {
-        // 소켓이 이미 연결되어 있다면 ID 설정
-        if (socket.connected && socket.id) {
-          console.log('Socket already connected with ID:', socket.id);
-          setSocketId(socket.id);
-          setIsSocketReady(true);
-        } else {
-          console.log('Socket not connected, waiting for connection...');
-          // 소켓 연결을 기다림
-          await waitForSocketConnection();
-        }
-        
-        // 방 참가
-        console.log('Joining room after socket connection confirmed');
-        await joinRoom(roomId, userNickname);
-        
-      } catch (error) {
-        console.error('Error initializing socket:', error);
-        setErrorMessage('서버 연결에 실패했습니다. 페이지를 새로고침해주세요.');
-      }
-    };
-
-    initializeSocket();
-  }, [roomId, userNickname, joinRoom, waitForSocketConnection]);
-
-  // 소켓 이벤트 리스너 등록
-  useEffect(() => {
-    console.log('Registering socket event listeners');
+    // 소켓 ID 초기 설정
+    if (socket.id) {
+      setSocketId(socket.id);
+      console.log('Initial socket ID set:', socket.id);
+    }
     
+    // 방 참가 - 유저 ID 포함
+    console.log('Emitting joinRoom event for room:', roomId);
+    joinRoom(roomId, userNickname, userId);
+    
+    // 주기적으로 방 상태를 확인하기 위한 인터벌 설정
+    const interval = setInterval(() => {
+      // 소켓 ID가 변경되었는지 확인하고 업데이트
+      if (socket.id && socket.id !== socketId) {
+        console.log('Socket ID changed, updating:', socket.id);
+        setSocketId(socket.id);
+      }
+    }, 1000); // 1초마다 확인
+
     // 이벤트 리스너 등록
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
@@ -264,8 +202,18 @@ const WaitingRoomPage = () => {
     
     console.log('🎯 All event listeners registered');
 
+    const handleUnload = () => leaveRoom(roomId, userId);
+    const handlePopState = () => leaveRoom(roomId, userId);
+
+    window.addEventListener('beforeunload', handleUnload);
+    window.addEventListener('popstate', handlePopState);
+
     return () => {
-      console.log('Removing socket event listeners');
+      console.log('WaitingRoomPage unmounting, cleaning up...');
+      clearInterval(interval);
+      window.removeEventListener('beforeunload', handleUnload);
+      window.removeEventListener('popstate', handlePopState);
+      leaveRoom(roomId, userId);
       
       // 모든 이벤트 리스너 제거
       socket.off('connect', handleConnect);
@@ -279,44 +227,31 @@ const WaitingRoomPage = () => {
       
       console.log('🏁 All event listeners removed');
     };
-  }, [handleConnect, handleDisconnect, handleRoomState, handleCreatorChanged, 
+  }, [roomId, userNickname, userId, socketId, joinRoom, leaveRoom, 
+      handleConnect, handleDisconnect, handleRoomState, handleCreatorChanged, 
       handlePlayerJoined, handlePlayerDisconnect, handleMoveToTetris, handleGameStartConfirmation]);
-
-  // 컴포넌트 언마운트 시 정리
-  useEffect(() => {
-    const handleUnload = () => leaveRoom(roomId);
-    const handlePopState = () => leaveRoom(roomId);
-
-    window.addEventListener('beforeunload', handleUnload);
-    window.addEventListener('popstate', handlePopState);
-
-    return () => {
-      console.log('WaitingRoomPage unmounting, cleaning up...');
-      window.removeEventListener('beforeunload', handleUnload);
-      window.removeEventListener('popstate', handlePopState);
-      leaveRoom(roomId);
-    };
-  }, [roomId, leaveRoom]);
 
   const handleLeaveRoom = () => {
     soundManager.play('button');
-    leaveRoom(roomId);
+    leaveRoom(roomId, userId);
     navigate('/rooms');
   };
 
   const handleStartGame = () => {
     soundManager.play('button');
     
-    if (!isSocketReady || !socket.connected) {
-      setErrorMessage('서버와의 연결이 불안정합니다. 잠시 후 다시 시도해주세요.');
-      setTimeout(() => setErrorMessage(''), 3000);
-      return;
-    }
-    
     if (isCreator) {
       console.log('Creator starting game for room:', roomId);
       console.log('Socket connected status:', socket.connected);
       console.log('Current socket ID:', socket.id);
+      console.log('Current user ID:', userId);
+      
+      if (!socket.connected) {
+        console.error('Socket is not connected');
+        setErrorMessage('서버와의 연결이 끊어졌습니다. 페이지를 새로고침해주세요.');
+        setTimeout(() => setErrorMessage(''), 2000);
+        return;
+      }
 
       if (participants.length < 2) {
         setErrorMessage('시작은 최소 2명부터 가능합니다.');
@@ -326,8 +261,8 @@ const WaitingRoomPage = () => {
 
       try {
         setErrorMessage('');
-        socket.emit('startGame', { roomId });
-        console.log('Emitted startGame event with data:', { roomId });
+        socket.emit('startGame', { roomId, userId });
+        console.log('Emitted startGame event with data:', { roomId, userId });
       } catch (error) {
         console.error('Error emitting startGame event:', error);
         alert('게임 시작 중 오류가 발생했습니다. 다시 시도해주세요.');
@@ -342,33 +277,19 @@ const WaitingRoomPage = () => {
     <div style={{ padding: '20px' }}>
       <h1>대기실</h1>
       <h2>방 ID: {roomId}</h2>
-      
-      {/* 연결 상태 표시 */}
-      {!isSocketReady && (
-        <div style={{ 
-          backgroundColor: '#fff3cd', 
-          color: '#856404', 
-          padding: '10px', 
-          borderRadius: '5px',
-          marginBottom: '20px'
-        }}>
-          서버에 연결 중입니다...
-        </div>
-      )}
-      
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <div style={{ flex: 1, maxWidth: '250px' }}>
           <h3>참가자 목록 ({participants.length}명)</h3>
           <ul style={{ listStyleType: 'none', padding: 0 }}>
             {participantDetails.map(participant => (
               <li
-                key={`${participant.socketId || 'unknown'}-${participant.id || 'no-id'}`}
+                key={`${participant.userId || 'unknown'}-${participant.id || 'no-id'}`}
                 style={{
                   margin: '8px 0',
                   padding: '8px',
                   backgroundColor: 'rgba(255, 255, 255, 0.7)',
                   borderRadius: '4px',
-                  border: participant.socketId === socketId ? '2px solid #007bff' : '1px solid rgba(0, 0, 0, 0.1)',
+                  border: participant.userId === userId ? '2px solid #007bff' : '1px solid rgba(0, 0, 0, 0.1)',
                   boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
                 }}
               >
@@ -379,14 +300,14 @@ const WaitingRoomPage = () => {
                     color: '#333',
                     textShadow: '0 1px 1px rgba(0, 0, 0, 0.1)'
                   }}>
-                    {participant.nickname} {participant.isCreator ? '(방장)' : ''} {participant.socketId === socketId ? ' (나)' : ''}
+                    {participant.nickname} {participant.isCreator ? '(방장)' : ''} {participant.userId === userId ? ' (나)' : ''}
                   </span>
                 </div>
               </li>
             ))}
           </ul>
 
-          {isCreator && isSocketReady && (
+          {isCreator && (
             <div>
               <button
                 onClick={handleStartGame}
@@ -440,8 +361,8 @@ const WaitingRoomPage = () => {
           fontSize: '12px'
         }}>
           <div>Socket ID: {socketId || 'null'}</div>
+          <div>User ID: {userId}</div>
           <div>Connected: {socket.connected ? 'Yes' : 'No'}</div>
-          <div>Socket Ready: {isSocketReady ? 'Yes' : 'No'}</div>
           <div>Is Creator: {isCreator ? 'Yes' : 'No'}</div>
         </div>
       )}

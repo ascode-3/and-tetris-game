@@ -18,6 +18,9 @@ const io = new Server(server, {
 
 // 게임방 관리
 const gameRooms = new Map();
+// 유저 ID와 소켓 ID 매핑 관리
+const userSocketMap = new Map(); // userId -> socketId
+const socketUserMap = new Map(); // socketId -> userId
 
 // 소켓 연결 처리
 io.on('connection', (socket) => {
@@ -33,8 +36,9 @@ io.on('connection', (socket) => {
             // 시작된 게임은 목록에서 제외
             if (room.isGameStarted) continue;
             
-            const creatorId = Array.from(room.players.keys())[0] || '';
-            const creatorName = room.players.get(creatorId)?.name || '알 수 없음';
+            const creatorUserId = room.creator;
+            const creatorData = room.players.get(creatorUserId);
+            const creatorName = creatorData?.name || '알 수 없음';
             
             roomList.push({
                 id: roomId,
@@ -51,12 +55,12 @@ io.on('connection', (socket) => {
         // 방 ID 생성
         const roomId = Math.random().toString(36).substr(2, 5).toUpperCase();
         
-        // 방 생성
+        // 방 생성 (creator를 userId로 설정하기 위해 임시로 socketId 사용)
         gameRooms.set(roomId, {
             players: new Map(),
             gameStates: new Map(),
             isGameStarted: false,
-            creator: socket.id
+            creator: socket.id // 임시로 socketId를 사용, joinRoom에서 실제 userId로 업데이트됨
         });
         
         console.log(`Room ${roomId} created by ${playerName} (${socket.id})`);
@@ -74,9 +78,14 @@ io.on('connection', (socket) => {
         socket.emit('roomExistsResponse', { roomId, exists });
     });
 
-    // 게임방 참가
-    socket.on('joinRoom', ({ roomId, playerName }) => {
-        console.log(`Player ${playerName} (${socket.id}) joining room ${roomId}`);
+    // 게임방 참가 - 유저 ID 기반으로 변경
+    socket.on('joinRoom', ({ roomId, playerName, userId }) => {
+        console.log(`Player ${playerName} (userId: ${userId}, socketId: ${socket.id}) joining room ${roomId}`);
+        
+        // 유저 ID와 소켓 ID 매핑 저장
+        userSocketMap.set(userId, socket.id);
+        socketUserMap.set(socket.id, userId);
+        
         socket.join(roomId);
         
         if (!gameRooms.has(roomId)) {
@@ -84,26 +93,46 @@ io.on('connection', (socket) => {
                 players: new Map(),
                 gameStates: new Map(),
                 isGameStarted: false,
-                creator: socket.id
+                creator: userId // 유저 ID로 방장 설정
             });
         }
 
         const room = gameRooms.get(roomId);
-        room.players.set(socket.id, {
-            id: socket.id,
-            name: playerName
-        });
-
-        // 방의 다른 플레이어들에게 새 플레이어 입장을 알림
-        socket.to(roomId).emit('playerJoined', {
-            id: socket.id,
-            name: playerName
-        });
+        
+        // 기존 플레이어가 다시 접속한 경우 소켓 ID만 업데이트
+        if (room.players.has(userId)) {
+            const existingPlayer = room.players.get(userId);
+            existingPlayer.socketId = socket.id;
+            room.players.set(userId, existingPlayer);
+            console.log(`Player ${userId} reconnected with new socket ${socket.id}`);
+        } else {
+            // 새 플레이어 추가
+            room.players.set(userId, {
+                id: userId,
+                userId: userId,
+                socketId: socket.id,
+                name: playerName
+            });
+            
+            // 방의 다른 플레이어들에게 새 플레이어 입장을 알림
+            socket.to(roomId).emit('playerJoined', {
+                userId: userId,
+                socketId: socket.id,
+                name: playerName
+            });
+        }
+        
+        // 방장이 설정되지 않았거나 소켓 ID로 설정되어 있으면 첫 번째 플레이어를 방장으로 설정
+        if (!room.creator || !room.players.has(room.creator)) {
+            const firstPlayerUserId = Array.from(room.players.keys())[0];
+            room.creator = firstPlayerUserId;
+            console.log(`Set room creator to: ${firstPlayerUserId}`);
+        }
 
         // 새로 입장한 플레이어에게 현재 방의 상태 전송
         const currentPlayers = Array.from(room.players.values());
-        const currentGameStates = Array.from(room.gameStates.entries()).map(([playerId, gameState]) => ({
-            playerId,
+        const currentGameStates = Array.from(room.gameStates.entries()).map(([userId, gameState]) => ({
+            playerId: userId,
             gameState
         }));
 
@@ -114,9 +143,9 @@ io.on('connection', (socket) => {
         });
     });
 
-    // 게임 시작
-    socket.on('startGame', ({ roomId }) => {
-        console.log(`Received startGame event for room: ${roomId}`);
+    // 게임 시작 - 유저 ID 기반 방장 체크
+    socket.on('startGame', ({ roomId, userId }) => {
+        console.log(`Received startGame event for room: ${roomId} from user: ${userId}`);
         
         if (!gameRooms.has(roomId)) {
             socket.emit('gameStartConfirmation', {
@@ -128,6 +157,16 @@ io.on('connection', (socket) => {
         }
 
         const room = gameRooms.get(roomId);
+        
+        // 방장 권한 체크 (유저 ID 기반)
+        if (room.creator !== userId) {
+            socket.emit('gameStartConfirmation', {
+                status: 'error',
+                error: '방장만 게임을 시작할 수 있습니다.',
+                roomId
+            });
+            return;
+        }
         
         if (room.isGameStarted) {
             socket.emit('gameStartConfirmation', {
@@ -173,45 +212,50 @@ io.on('connection', (socket) => {
                 
                 // 테트리스 페이지로 이동하지 않은 플레이어 확인
                 const notMovedPlayers = Array.from(currentRoom.players.keys())
-                    .filter(playerId => !currentRoom.movedToTetris.has(playerId));
+                    .filter(userId => !currentRoom.movedToTetris.has(userId));
                 
                 if (notMovedPlayers.length > 0) {
                     console.log(`Room ${roomId}: ${notMovedPlayers.length} players did not move to tetris page`);
                     
                     // 이동하지 않은 플레이어들에게 다시 이동 이벤트 전송
-                    notMovedPlayers.forEach(playerId => {
-                        io.to(playerId).emit('moveToTetrisPage', roomId);
+                    notMovedPlayers.forEach(userId => {
+                        const playerSocketId = userSocketMap.get(userId);
+                        if (playerSocketId) {
+                            io.to(playerSocketId).emit('moveToTetrisPage', roomId);
+                        }
                     });
                 }
             }
         }, 5000);
     });
 
-    // 테트리스 페이지 이동 확인 이벤트 핸들러 추가
+    // 테트리스 페이지 이동 확인 이벤트 핸들러
     socket.on('tetrisPageLoaded', ({ roomId }) => {
-        if (gameRooms.has(roomId)) {
+        const userId = socketUserMap.get(socket.id);
+        if (gameRooms.has(roomId) && userId) {
             const room = gameRooms.get(roomId);
             
-            // 테트리스 페이지로 이동한 플레이어 기록
+            // 테트리스 페이지로 이동한 플레이어 기록 (유저 ID 기반)
             if (!room.movedToTetris) {
                 room.movedToTetris = new Set();
             }
-            room.movedToTetris.add(socket.id);
+            room.movedToTetris.add(userId);
             
-            console.log(`Player ${socket.id} moved to tetris page in room ${roomId}`);
+            console.log(`Player ${userId} moved to tetris page in room ${roomId}`);
         }
     });
 
     // 게임 상태 업데이트
     socket.on('updateGameState', ({ roomId, gameState }) => {
-        if (gameRooms.has(roomId)) {
+        const userId = socketUserMap.get(socket.id);
+        if (gameRooms.has(roomId) && userId) {
             const room = gameRooms.get(roomId);
-            room.gameStates.set(socket.id, gameState);
+            room.gameStates.set(userId, gameState);
 
             // 방의 다른 플레이어들에게 업데이트된 게임 상태 전송
             socket.to(roomId).emit('gameStateUpdate', {
-                playerId: socket.id,
-                playerName: room.players.get(socket.id)?.name,
+                playerId: userId,
+                playerName: room.players.get(userId)?.name,
                 gameState
             });
         }
@@ -219,7 +263,8 @@ io.on('connection', (socket) => {
 
     // 게임 오버
     socket.on('gameOver', ({ roomId, score }) => {
-        if (gameRooms.has(roomId)) {
+        const userId = socketUserMap.get(socket.id);
+        if (gameRooms.has(roomId) && userId) {
             const room = gameRooms.get(roomId);
             
             // 이미 게임이 종료된 경우 처리하지 않음
@@ -228,24 +273,24 @@ io.on('connection', (socket) => {
             }
             
             // 플레이어의 게임 상태에 게임 오버 표시 추가
-            if (room.gameStates.has(socket.id)) {
-                const currentState = room.gameStates.get(socket.id);
+            if (room.gameStates.has(userId)) {
+                const currentState = room.gameStates.get(userId);
                 currentState.isGameOver = true;
-                room.gameStates.set(socket.id, currentState);
+                room.gameStates.set(userId, currentState);
             }
             
             // 방의 다른 플레이어들에게 게임 오버 알림
             socket.to(roomId).emit('playerGameOver', {
-                playerId: socket.id,
+                playerId: userId,
                 score,
                 isGameOver: true
             });
             
             // 게임 상태 업데이트도 함께 전송하여 UI가 즉시 업데이트되도록 함
             socket.to(roomId).emit('gameStateUpdate', {
-                playerId: socket.id,
-                playerName: room.players.get(socket.id)?.name,
-                gameState: { ...room.gameStates.get(socket.id), isGameOver: true }
+                playerId: userId,
+                playerName: room.players.get(userId)?.name,
+                gameState: { ...room.gameStates.get(userId), isGameOver: true }
             });
             
             // 게임 오버되지 않은 플레이어 수 확인
