@@ -60,7 +60,8 @@ io.on('connection', (socket) => {
             players: new Map(),
             gameStates: new Map(),
             isGameStarted: false,
-            creator: socket.id // 임시로 socketId를 사용, joinRoom에서 실제 userId로 업데이트됨
+            creator: socket.id, // 임시로 socketId를 사용, joinRoom에서 실제 userId로 업데이트됨
+            movedToTetris: new Set() // 테트리스 페이지로 이동한 사용자 추적용 Set 추가
         });
         
         console.log(`Room ${roomId} created by ${playerName} (${socket.id})`);
@@ -93,7 +94,8 @@ io.on('connection', (socket) => {
                 players: new Map(),
                 gameStates: new Map(),
                 isGameStarted: false,
-                creator: userId // 유저 ID로 방장 설정
+                creator: userId, // 유저 ID로 방장 설정
+                movedToTetris: new Set() // 테트리스 페이지로 이동한 사용자 추적용 Set 추가
             });
         }
 
