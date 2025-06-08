@@ -62,20 +62,23 @@ const CreateRoomPage = () => {
       <h1>방 생성</h1>
       <p>새로운 방을 생성합니다. '완료' 버튼을 누르면 대기실로 이동합니다.</p>
       <button 
-        onClick={handleCreateRoom}
-        style={{
-          padding: '10px 20px',
-          backgroundColor: '#28a745',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px',
-          fontSize: '16px',
-          cursor: 'pointer',
-          marginTop: '20px'
-        }}
-      >
-        완료
-      </button>
+  onClick={handleCreateRoom}
+  disabled={isCreating}
+  style={{
+    padding: '10px 20px',
+    backgroundColor: isCreating ? '#6c757d' : '#28a745',
+    color: 'white',
+    border: 'none',
+    borderRadius: '5px',
+    fontSize: '16px',
+    cursor: isCreating ? 'not-allowed' : 'pointer',
+    marginTop: '20px',
+    opacity: isCreating ? 0.7 : 1,
+    transition: 'all 0.3s ease'
+  }}
+>
+  {isCreating ? '생성 중...' : '완료'}
+</button>
     </div>
   );
 };
