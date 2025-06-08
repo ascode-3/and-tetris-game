@@ -324,7 +324,7 @@ io.on('connection', (socket) => {
                 // 게임 상태 초기화
                 room.isGameStarted = false;
                 room.isGameFinished = true;
-                room.playersRestarted = new Set(); // 계속하기 누른 플레이어 목록 초기화
+                room.playersRestarted = new Set(); // 계속하기 누른 플레이어 목록 초기화 (유저 ID 기반)
                 
                 // 테트리스 페이지 이동 추적 초기화
                 if (room.movedToTetris) {
@@ -336,9 +336,10 @@ io.on('connection', (socket) => {
         }
     });
     
-    // 게임 재시작
+    // 게임 재시작 - 유저 ID 기반으로 수정
     socket.on('restartGame', ({ roomId }) => {
-        if (gameRooms.has(roomId)) {
+        const userId = socketUserMap.get(socket.id);
+        if (gameRooms.has(roomId) && userId) {
             const room = gameRooms.get(roomId);
             
             // 계속하기를 누른 플레이어 추적을 위한 Set 초기화 또는 생성
@@ -346,15 +347,15 @@ io.on('connection', (socket) => {
                 room.playersRestarted = new Set();
             }
             
-            // 현재 플레이어를 계속하기 누른 플레이어 목록에 추가
-            room.playersRestarted.add(socket.id);
+            // 현재 플레이어를 계속하기 누른 플레이어 목록에 추가 (유저 ID 기반)
+            room.playersRestarted.add(userId);
             
-            console.log(`Player ${socket.id} restarted in room ${roomId}. ${room.playersRestarted.size}/${room.players.size} players restarted.`);
+            console.log(`Player ${userId} restarted in room ${roomId}. ${room.playersRestarted.size}/${room.players.size} players restarted.`);
             
             // 다른 플레이어들에게 누가 계속하기를 눌렀는지 알림
             io.to(roomId).emit('playerRestarted', {
-                playerId: socket.id,
-                playerName: room.players.get(socket.id)?.name,
+                playerId: userId,
+                playerName: room.players.get(userId)?.name,
                 restartedCount: room.playersRestarted.size,
                 totalPlayers: room.players.size
             });
@@ -387,69 +388,87 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 방 떠나기 처리
-    socket.on('leaveRoom', ({ roomId }) => {
+    // 방 떠나기 처리 - 유저 ID 기반으로 수정
+    socket.on('leaveRoom', ({ roomId, userId }) => {
+        console.log(`Received leaveRoom event for room: ${roomId} from user: ${userId}`);
+        
         if (!gameRooms.has(roomId)) return;
         
         const room = gameRooms.get(roomId);
-        if (room.players.has(socket.id)) {
-            const playerName = room.players.get(socket.id)?.name || '알 수 없음';
-            console.log(`Player ${playerName} (${socket.id}) leaving room ${roomId}`);
+        if (room.players.has(userId)) {
+            const playerName = room.players.get(userId)?.name || '알 수 없음';
+            console.log(`Player ${playerName} (userId: ${userId}, socketId: ${socket.id}) leaving room ${roomId}`);
             
             // 방장이 나갈 경우 새 방장 지정
-            const wasCreator = room.creator === socket.id;
-            room.players.delete(socket.id);
-            room.gameStates.delete(socket.id);
+            const wasCreator = room.creator === userId;
+            room.players.delete(userId);
+            room.gameStates.delete(userId);
             
-            // 방의 다른 플레이어들에게 알림
-            io.to(roomId).emit('playerDisconnect', socket.id);
+            // 방의 다른 플레이어들에게 알림 (유저 ID로 알림)
+            io.to(roomId).emit('playerDisconnect', userId);
             
             // 방에 플레이어가 없으면 방 삭제
             if (room.players.size === 0) {
                 gameRooms.delete(roomId);
                 io.emit('roomListUpdated'); // 방 목록 갱신 알림
             } else if (wasCreator) {
-                // 새 방장 지정 (첫 번째 플레이어)
-                const newCreator = Array.from(room.players.keys())[0];
-                room.creator = newCreator;
+                // 새 방장 지정 (첫 번째 플레이어의 유저 ID)
+                const newCreatorUserId = Array.from(room.players.keys())[0];
+                room.creator = newCreatorUserId;
                 
                 // 새 방장 알림
-                io.to(roomId).emit('creatorChanged', { newCreatorId: newCreator });
+                io.to(roomId).emit('creatorChanged', { newCreatorId: newCreatorUserId });
             }
             
             // 소켓에서 해당 방 떠나기
             socket.leave(roomId);
         }
+        
+        // 유저 ID와 소켓 ID 매핑 정리
+        userSocketMap.delete(userId);
+        socketUserMap.delete(socket.id);
     });
     
-    // 연결 해제
+    // 연결 해제 - 유저 ID 기반으로 수정
     socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.id}`);
         
+        const userId = socketUserMap.get(socket.id);
+        
         // 모든 게임방에서 플레이어 제거
         for (const [roomId, room] of gameRooms.entries()) {
-            if (room.players.has(socket.id)) {
-                const wasCreator = room.creator === socket.id;
-                room.players.delete(socket.id);
-                room.gameStates.delete(socket.id);
+            if (userId && room.players.has(userId)) {
+                const wasCreator = room.creator === userId;
+                const playerName = room.players.get(userId)?.name || '알 수 없음';
                 
-                // 방의 다른 플레이어들에게 알림
-                io.to(roomId).emit('playerDisconnect', socket.id);
+                console.log(`Player ${playerName} (userId: ${userId}) disconnected from room ${roomId}`);
+                
+                room.players.delete(userId);
+                room.gameStates.delete(userId);
+                
+                // 방의 다른 플레이어들에게 알림 (유저 ID로 알림)
+                io.to(roomId).emit('playerDisconnect', userId);
 
                 // 방에 플레이어가 없으면 방 삭제
                 if (room.players.size === 0) {
                     gameRooms.delete(roomId);
                     io.emit('roomListUpdated'); // 방 목록 갱신 알림
                 } else if (wasCreator) {
-                    // 새 방장 지정 (첫 번째 플레이어)
-                    const newCreator = Array.from(room.players.keys())[0];
-                    room.creator = newCreator;
+                    // 새 방장 지정 (첫 번째 플레이어의 유저 ID)
+                    const newCreatorUserId = Array.from(room.players.keys())[0];
+                    room.creator = newCreatorUserId;
                     
                     // 새 방장 알림
-                    io.to(roomId).emit('creatorChanged', { newCreatorId: newCreator });
+                    io.to(roomId).emit('creatorChanged', { newCreatorId: newCreatorUserId });
                 }
             }
         }
+        
+        // 유저 ID와 소켓 ID 매핑 정리
+        if (userId) {
+            userSocketMap.delete(userId);
+        }
+        socketUserMap.delete(socket.id);
     });
 });
 
