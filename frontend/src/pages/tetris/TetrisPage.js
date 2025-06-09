@@ -35,7 +35,6 @@ const TetrisPage = () => {
     setHoldCanvasRef,
     setNextCanvasRef,
     setNextNextCanvasRef,
-    gameOver: gameIsOver,
     currentGameState
   } = useTetris();
 
@@ -69,45 +68,39 @@ const TetrisPage = () => {
   // Handle game state updates from other players
   const handleGameStateUpdate = useCallback((data) => {
     if (data.playerId !== socket?.id) {
+      console.log('Updating game state for player:', data.playerId, data);
+      
       setOtherPlayers(prevPlayers => {
         // Find the index of the player to update
-        const playerIndex = prevPlayers.findIndex(p => p.id === data.playerId);
-
-        if (playerIndex > -1) {
-          // 이미 게임 오버된 플레이어의 상태는 업데이트하지 않음
-          if (prevPlayers[playerIndex].gameState?.isGameOver) {
-            // 다만 isGameOver 플래그가 있는 상태에서는 유지
-            if (data.gameState?.isGameOver) {
-              return prevPlayers;
-            }
-            // 새 상태에 isGameOver 플래그가 없는 경우, 기존 플래그 유지
-            const newPlayers = [...prevPlayers];
-            newPlayers[playerIndex] = {
-              ...newPlayers[playerIndex],
-              gameState: {
-                ...data.gameState,
-                isGameOver: true
-              }
-            };
-            return newPlayers;
-          }
-          
-          // 일반 상태 업데이트
+        const existingPlayerIndex = prevPlayers.findIndex(p => p.id === data.playerId);
+        
+        // 새로운 플레이어 정보 생성
+        const updatedPlayer = {
+          id: data.playerId,
+          name: data.playerName || `Player_${data.playerId.slice(0, 4)}`,
+          gameState: data.gameState
+        };
+        
+        if (existingPlayerIndex > -1) {
+          // 이미 존재하는 플레이어 업데이트
           const newPlayers = [...prevPlayers];
-          newPlayers[playerIndex] = {
-            ...newPlayers[playerIndex],
-            gameState: data.gameState
+          newPlayers[existingPlayerIndex] = {
+            ...newPlayers[existingPlayerIndex],
+            ...updatedPlayer,
+            // 게임 오버 상태는 유지 (새로운 상태에 isGameOver가 없으면 기존 값 유지)
+            gameState: {
+              ...newPlayers[existingPlayerIndex].gameState,
+              ...data.gameState,
+              // 게임 오버 상태가 이미 true면 유지
+              isGameOver: data.gameState?.isGameOver !== undefined 
+                ? data.gameState.isGameOver 
+                : newPlayers[existingPlayerIndex].gameState?.isGameOver
+            }
           };
           return newPlayers;
         } else {
-          // New player: Add to the end (or implement a consistent sorting)
-          // For now, adding to the end. If strict join order is needed,
-          // server should send join order.
-          return [...prevPlayers, {
-          id: data.playerId,
-          name: data.playerName,
-          gameState: data.gameState
-        }];
+          // 새 플레이어 추가
+          return [...prevPlayers, updatedPlayer];
         }
       });
     }
@@ -156,7 +149,7 @@ const TetrisPage = () => {
     if (gameBoardRef.current) {
       startGame();
     }
-  }, []);
+  }, [startGame]);
   
   // 다른 플레이어가 계속하기를 눌렀을 때 처리하는 핸들러
   const handlePlayerRestarted = useCallback((data) => {

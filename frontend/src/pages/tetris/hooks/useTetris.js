@@ -22,6 +22,13 @@ export function useTetris() {
     
     // Game state
     const [score, setScore] = useState(0);
+    const scoreRef = useRef(score);
+    
+    // scoreRef를 score와 동기화
+    useEffect(() => {
+        scoreRef.current = score;
+    }, [score]);
+    
     const [level, setLevel] = useState(1);
     const [isGameStarted, setIsGameStarted] = useState(false);
     const [gameOver, setGameOver] = useState(false);
@@ -125,14 +132,15 @@ export function useTetris() {
         // 게임 오버 체크는 currentPiece가 할당된 후에 해야 함
         if (currentPieceRef.current && checkCollision(currentPieceRef.current, gridRef.current)) {
             setGameOver(true);
-            // 게임 오버 이벤트를 서버에 전송
-            sendGameOver(roomIdRef.current, score);
+            // 게임 오버 이벤트를 서버에 전송 (scoreRef를 사용하여 최신 값 참조)
+            const currentScore = scoreRef !== undefined ? scoreRef.current : 0;
+            sendGameOver(roomIdRef.current, currentScore);
             return false;
         }
         
         updatePreviewDisplays();
         return true;
-    }, [getNextPieceFromBag, updatePreviewDisplays]);
+    }, [getNextPieceFromBag, updatePreviewDisplays, gameOver]);
 
     // Move piece
     const movePiece = useCallback((dir) => {
