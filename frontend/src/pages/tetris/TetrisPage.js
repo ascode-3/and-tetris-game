@@ -35,7 +35,7 @@ const TetrisPage = () => {
     setHoldCanvasRef,
     setNextCanvasRef,
     setNextNextCanvasRef,
-    currentGameState
+    getCurrentGameState
   } = useTetris();
 
   // Set canvas refs
@@ -183,8 +183,9 @@ const TetrisPage = () => {
     eventHandlersSet.current = true;
 
     // Join the game room
-    console.log('Joining room with playerName:', playerName);
-    joinRoom(roomId, playerName);
+    const userId = sessionStorage.getItem('sessionUserId');
+    console.log('Joining room with playerName:', playerName, 'userId:', userId);
+    joinRoom(roomId, playerName, userId);
 
     // 테트리스 페이지 로드 알림
     console.log('Sending tetrisPageLoaded event for room:', roomId);
@@ -217,14 +218,14 @@ const TetrisPage = () => {
 
   // Send game state updates
   useEffect(() => {
-    if (!socket || !currentGameState) return;
+    if (!socket || !getCurrentGameState) return;
 
     const interval = setInterval(() => {
-      updateGameState(roomId, currentGameState);
+      updateGameState(roomId, getCurrentGameState());
     }, 100); // Update every 100ms
 
     return () => clearInterval(interval);
-  }, [socket, roomId, currentGameState, updateGameState]);
+  }, [socket, roomId, getCurrentGameState, updateGameState]);
 
   // 게임 나가기 처리
   const handleLeaveGame = useCallback(() => {

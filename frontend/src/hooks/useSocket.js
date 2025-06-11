@@ -62,10 +62,11 @@ export const useSocket = () => {
         }
     }, []);
 
-    const joinRoom = (roomId, playerName) => {
+    // userId도 함께 전송하여 서버가 식별할 수 있도록 수정
+    const joinRoom = (roomId, playerName, userId) => {
         if (socketRef.current) {
-            console.log('Joining room:', roomId, 'as', playerName);
-            socketRef.current.emit('joinRoom', { roomId, playerName });
+            console.log('Joining room:', roomId, 'as', playerName, '(userId:', userId, ')');
+            socketRef.current.emit('joinRoom', { roomId, playerName, userId });
         } else {
             console.error('Socket not initialized');
         }

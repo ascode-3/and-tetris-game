@@ -79,6 +79,18 @@ export function useTetris() {
         isGameStartedRef.current = isGameStarted;
     }, [isGameStarted]);
 
+    // === 현재 게임 상태를 즉시 반환하는 헬퍼 ===
+    const getCurrentGameState = useCallback(() => ({
+        grid: gridRef.current.map(row => [...row]),
+        currentPiece: currentPieceRef.current,
+        score: scoreRef.current,
+        level,
+        holdPiece: holdPieceRef.current,
+        nextPiece: nextPieceRef.current,
+        nextNextPiece: nextNextPieceRef.current,
+        isGameOver: gameOver
+    }), [level, gameOver]);
+
     // Update preview displays
     const updatePreviewDisplays = useCallback(() => {
         if (holdCanvasRef.current) {
@@ -243,18 +255,24 @@ export function useTetris() {
         if (!holdPieceRef.current) {
             holdPieceRef.current = {
                 shape: currentPieceRef.current.shape,
-                color: currentPieceRef.current.color
+                color: currentPieceRef.current.color,
+                type: currentPieceRef.current.type,
+                orientation: 0
             };
             spawnPiece();
         } else {
             const temp = {
                 shape: currentPieceRef.current.shape,
-                color: currentPieceRef.current.color
+                color: currentPieceRef.current.color,
+                type: currentPieceRef.current.type,
+                orientation: 0
             };
             currentPieceRef.current = {
                 pos: {x: Math.floor(COLS/2) - Math.floor(holdPieceRef.current.shape[0].length/2), y: 0},
                 shape: holdPieceRef.current.shape,
-                color: holdPieceRef.current.color
+                color: holdPieceRef.current.color,
+                type: holdPieceRef.current.type,
+                orientation: 0
             };
             holdPieceRef.current = temp;
         }
@@ -267,14 +285,12 @@ export function useTetris() {
     const rotate = useCallback(() => {
         if (!currentPieceRef.current || !isGameStartedRef.current) return;
 
-        const rotated = rotatePiece(currentPieceRef.current);
-        const originalShape = currentPieceRef.current.shape;
-        currentPieceRef.current.shape = rotated;
-        
-        if (checkCollision(currentPieceRef.current, gridRef.current)) {
-            currentPieceRef.current.shape = originalShape;
-        } else if (isLockingRef.current) {
-            moveCounterRef.current++;
+        const rotatedPiece = rotatePiece(currentPieceRef.current, gridRef.current);
+        if (rotatedPiece) {
+            currentPieceRef.current = rotatedPiece;
+            if (isLockingRef.current) {
+                moveCounterRef.current++;
+            }
         }
     }, []);
 
@@ -489,6 +505,7 @@ export function useTetris() {
         setHoldCanvasRef,
         setNextCanvasRef,
         setNextNextCanvasRef,
+        getCurrentGameState,
         currentGameState: {
             grid: gridRef.current.map(row => [...row]),
             currentPiece: currentPieceRef.current,
@@ -496,7 +513,8 @@ export function useTetris() {
             level,
             holdPiece: holdPieceRef.current,
             nextPiece: nextPieceRef.current,
-            nextNextPiece: nextNextPieceRef.current
+            nextNextPiece: nextNextPieceRef.current,
+            isGameOver: gameOver
         }
     };
 }
