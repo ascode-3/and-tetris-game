@@ -33,6 +33,7 @@ export function useTetris() {
     const [isGameStarted, setIsGameStarted] = useState(false);
     const [gameOver, setGameOver] = useState(false);
     const roomIdRef = useRef(window.location.pathname.split('/').pop());
+    const levelUpTimerRef = useRef(null); // 레벨업 타이머를 위한 ref 추가
 
     // Refs for game state
     const gridRef = useRef(Array.from({length: ROWS}, () => Array(COLS).fill(0)));
@@ -422,9 +423,27 @@ export function useTetris() {
         }
         animationFrameIdRef.current = requestAnimationFrame(gameLoop);
         
+        // 10초마다 레벨업 타이머 설정
+        if (levelUpTimerRef.current) {
+            clearInterval(levelUpTimerRef.current);
+        }
+        
+        levelUpTimerRef.current = setInterval(() => {
+            setLevel(prevLevel => {
+                const newLevel = prevLevel + 1;
+                // 레벨이 올라갈수록 블록이 더 빨리 떨어지도록 조정 (예: 레벨당 50ms씩 감소, 최소 50ms)
+                dropIntervalRef.current = Math.max(50, INITIAL_DROP_INTERVAL - (newLevel * 50));
+                updateLevelDisplay(newLevel);
+                return newLevel;
+            });
+        }, 5000); // 5초(5000ms)마다 실행
+        
         return () => {
             if (animationFrameIdRef.current) {
                 cancelAnimationFrame(animationFrameIdRef.current);
+            }
+            if (levelUpTimerRef.current) {
+                clearInterval(levelUpTimerRef.current);
             }
         };
     }, [gameLoop, getNextPieceFromBag, spawnPiece, updatePreviewDisplays]);
@@ -471,6 +490,9 @@ export function useTetris() {
             if (animationFrameIdRef.current) {
                 cancelAnimationFrame(animationFrameIdRef.current);
             }
+            if (levelUpTimerRef.current) {
+                clearInterval(levelUpTimerRef.current);
+            }
         };
     }, [handleKeyPress]);
 
@@ -487,6 +509,9 @@ export function useTetris() {
         return () => {
             if (animationFrameIdRef.current) {
                 cancelAnimationFrame(animationFrameIdRef.current);
+            }
+            if (levelUpTimerRef.current) {
+                clearInterval(levelUpTimerRef.current);
             }
         };
     }, []);

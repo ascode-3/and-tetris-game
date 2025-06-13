@@ -128,31 +128,6 @@ const RoomListPage = () => {
             >
               방 생성
             </button>
-            <button 
-              onClick={handleReset}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontSize: '16px',
-                transition: 'all 0.3s ease',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                ':hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                  backgroundColor: '#c82333'
-                },
-                ':active': {
-                  transform: 'translateY(0)',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                }
-              }}
-            >
-              초기화
-            </button>
           </div>
         </div>
       </div>

@@ -463,9 +463,7 @@ const miniBoard1v1Style = useMemo(() => {
               >
                 {restartedPlayers.some(p => p.id === socket?.id) ? '대기 중...' : '계속하기'}
               </button>
-              <button className="leave-button" onClick={handleLeaveGame}>
-                나가기
-              </button>
+{/*일단 지금 나가기 버튼 자리는 지움 왜냐고? 나가기 눌러도 방에 남음음*/}
             </div>
           </div>
         )}
