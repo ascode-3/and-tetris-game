@@ -197,6 +197,49 @@ io.on('connection', (socket) => {
         // 모든 플레이어에게 게임 시작 알림
         io.to(roomId).emit('moveToTetrisPage', roomId);
         io.to(roomId).emit('gameStart');
+
+        /* === 랜덤 타겟 지정 및 주기적 변경 기능 추가 === */
+        // 타겟을 지정하는 헬퍼 함수
+        const assignTargets = () => {
+            const playerIds = Array.from(room.players.keys());
+            if (playerIds.length <= 1) return; // 플레이어가 1명 이하일 땐 타겟을 지정하지 않음
+
+            // Map<attackerId, targetId>
+            room.targetMap = new Map();
+
+            playerIds.forEach(attackerId => {
+                let targetId;
+                if (playerIds.length === 2) {
+                    // 두 명일 때는 상대방이 타겟
+                    targetId = playerIds.find(id => id !== attackerId);
+                } else {
+                    // 세 명 이상일 때는 자신을 제외한 플레이어 중 무작위 선택
+                    do {
+                        targetId = playerIds[Math.floor(Math.random() * playerIds.length)];
+                    } while (targetId === attackerId);
+                }
+
+                room.targetMap.set(attackerId, targetId);
+
+                const attackerSocketId = userSocketMap.get(attackerId);
+                if (attackerSocketId) {
+                    io.to(attackerSocketId).emit('targetAssigned', {
+                        targetId,
+                        targetName: room.players.get(targetId)?.name
+                    });
+                }
+            });
+        };
+
+        // 최초 타겟 지정
+        assignTargets();
+
+        // 15초마다 타겟 재지정
+        if (room.targetInterval) {
+            clearInterval(room.targetInterval);
+        }
+        room.targetInterval = setInterval(assignTargets, 15000);
+        /* === 랜덤 타겟 기능 끝 === */
         
         // 게임 시작 확인 메시지 전송
         socket.emit('gameStartConfirmation', {
@@ -323,6 +366,12 @@ io.on('connection', (socket) => {
                     players: Array.from(room.players.values())
                 });
                 
+                // 타겟 변경 인터벌 정리
+                if (room.targetInterval) {
+                    clearInterval(room.targetInterval);
+                    room.targetInterval = null;
+                }
+
                 // 게임 상태 초기화
                 room.isGameStarted = false;
                 room.isGameFinished = true;

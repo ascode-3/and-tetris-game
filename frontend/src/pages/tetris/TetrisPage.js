@@ -15,6 +15,8 @@ const TetrisPage = () => {
   const [isGameWon, setIsGameWon] = useState(false);
   const [winner, setWinner] = useState(null);
   const [restartedPlayers, setRestartedPlayers] = useState([]);
+  // 현재 타겟
+  const [targetPlayer, setTargetPlayer] = useState(null);
   const [totalPlayers, setTotalPlayers] = useState(0);
   const playerName = sessionStorage.getItem('userNickname') || '게스트_' + (sessionStorage.getItem('sessionUserId')?.slice(-4) || '0000');
   const eventHandlersSet = useRef(false);
@@ -139,6 +141,12 @@ const TetrisPage = () => {
     setWinner(data.winner);
   }, []);
   
+  // 타겟 지정 이벤트 핸들러
+  const handleTargetAssigned = useCallback((data) => {
+    console.log('New target assigned:', data);
+    setTargetPlayer({ id: data.targetId, name: data.targetName });
+  }, []);
+
   // 게임 재시작 이벤트 핸들러
   const handleGameRestart = useCallback(() => {
     console.log('Game restarted');
@@ -198,6 +206,7 @@ const TetrisPage = () => {
     socket.on('gameWin', handleGameWin);
     socket.on('gameRestart', handleGameRestart);
     socket.on('playerRestarted', handlePlayerRestarted);
+    socket.on('targetAssigned', handleTargetAssigned);
     socket.on('gameStart', () => {
       console.log('Received gameStart event, starting game...');
       startGame();
@@ -212,9 +221,10 @@ const TetrisPage = () => {
       socket.off('gameWin', handleGameWin);
       socket.off('gameRestart', handleGameRestart);
       socket.off('playerRestarted', handlePlayerRestarted);
+      socket.off('targetAssigned', handleTargetAssigned);
       eventHandlersSet.current = false;
     };
-  }, [socket, refsReady, roomId, playerName, startGame, joinRoom, handleGameStateUpdate, handlePlayerDisconnect, handlePlayerGameOver, handleGameWin, handleGameRestart, handlePlayerRestarted]);
+  }, [socket, refsReady, roomId, playerName, startGame, joinRoom, handleGameStateUpdate, handlePlayerDisconnect, handlePlayerGameOver, handleGameWin, handleGameRestart, handlePlayerRestarted, handleTargetAssigned]);
 
   // Send game state updates
   useEffect(() => {
@@ -402,6 +412,10 @@ const miniBoard1v1Style = useMemo(() => {
                   <div className="next-next-box">
                     <div className="panel-label">Next Next:</div>
                     <canvas ref={nextNextCanvasRef} id="nextNextCanvas" width="120" height="120"></canvas>
+                  </div>
+                  <div className="target-box">
+                    <div className="panel-label">Target:</div>
+                    <div className="target-name">{targetPlayer ? targetPlayer.name : '없음'}</div>
                   </div>
                   <div className="controls">
                     <div className="panel-label">Controls:</div>

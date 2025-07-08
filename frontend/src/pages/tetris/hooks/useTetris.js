@@ -446,7 +446,7 @@ export function useTetris() {
                 clearInterval(levelUpTimerRef.current);
             }
         };
-    }, [gameLoop, getNextPieceFromBag, spawnPiece, updatePreviewDisplays]);
+    }, [gameLoop, getNextPieceFromBag, spawnPiece, updatePreviewDisplays, sendGameOver]);
 
     // Initialize game
     useEffect(() => {
