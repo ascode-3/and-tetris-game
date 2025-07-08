@@ -287,6 +287,14 @@ io.on('connection', (socket) => {
             room.movedToTetris.add(userId);
             
             console.log(`Player ${userId} moved to tetris page in room ${roomId}`);
+            // 페이지가 로드된 직후 현재 타겟 정보를 해당 플레이어에게 전송
+            if (room.targetMap && room.targetMap.has(userId)) {
+                const targetId = room.targetMap.get(userId);
+                io.to(socket.id).emit('targetAssigned', {
+                    targetId,
+                    targetName: room.players.get(targetId)?.name
+                });
+            }
         }
     });
 
