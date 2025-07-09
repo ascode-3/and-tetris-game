@@ -221,3 +221,10 @@ src\pages\tetris\hooks\useTetris.js
 
 Search for the keywords to learn more about each warning.
 To ignore, add // eslint-disable-next-line to the line before.
+
+
+2025-07-09 {
+    일단 지금 타게 시스템 까지는 만들었고, 공격 시스템에서 롤백을 진행함. 그리고 귀찮아
+    지금 공격 시스템을 좀 더 자세히 설명해야 할 뜻 이게 마지막 시스템이니까
+
+}

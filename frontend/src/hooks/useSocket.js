@@ -84,10 +84,28 @@ export const useSocket = () => {
         }
     };
 
+    // 라인 삭제 정보를 서버로 전송
+    const sendLineCleared = (roomId, linesCleared) => {
+        if (socketRef.current && roomId) {
+            socketRef.current.emit('lineCleared', { roomId, linesCleared });
+        }
+    };
+
+    // 가비지 라인 수신 콜백 등록
+    const onReceiveGarbage = (callback) => {
+        if (socketRef.current) {
+            socketRef.current.on('receiveGarbage', callback);
+            return () => socketRef.current.off('receiveGarbage', callback);
+        }
+        return () => {};
+    };
+
     return {
         socket: socketRef.current,
         joinRoom,
         updateGameState,
-        sendGameOver
+        sendGameOver,
+        sendLineCleared,
+        onReceiveGarbage
     };
 }; 

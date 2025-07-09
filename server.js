@@ -299,6 +299,33 @@ io.on('connection', (socket) => {
     });
 
     // 게임 상태 업데이트
+    // 라인 삭제(공격) 처리
+    socket.on('lineCleared', ({ roomId, linesCleared }) => {
+        const attackerId = socketUserMap.get(socket.id);
+        if (!gameRooms.has(roomId) || !attackerId) return;
+        const room = gameRooms.get(roomId);
+        if (!room.targetMap || !room.targetMap.has(attackerId)) return;
+        let garbage = 0;
+        if (linesCleared === 1) {
+            garbage = Math.random() < 0.5 ? 1 : 0;
+        } else if (linesCleared === 2) {
+            garbage = 1;
+        } else if (linesCleared === 3) {
+            garbage = 2;
+        } else if (linesCleared >= 4) {
+            garbage = 4;
+        }
+        if (garbage === 0) return;
+        const targetId = room.targetMap.get(attackerId);
+        if (room.gameStates.has(targetId) && room.gameStates.get(targetId).isGameOver) {
+            return;
+        }
+        const targetSocketId = userSocketMap.get(targetId);
+        if (targetSocketId) {
+            io.to(targetSocketId).emit('receiveGarbage', { lines: garbage });
+        }
+    });
+
     socket.on('updateGameState', ({ roomId, gameState }) => {
         const userId = socketUserMap.get(socket.id);
         if (gameRooms.has(roomId) && userId) {

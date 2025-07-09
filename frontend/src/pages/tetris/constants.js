@@ -11,7 +11,8 @@ export const COLORS = [
     '#FFFF00', // yellow - O piece (밝은 노랑)
     '#00FF00', // green - S piece (밝은 녹색)
     '#A020F0', // purple - T piece (밝은 보라)
-    '#FF0000'  // red - Z piece (밝은 빨강)
+    '#FF0000',  // red - Z piece (밝은 빨강)
+    '#555555'  // garbage grey
 ];
 
 // Visual settings

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import soundManager from '../../../utils/SoundManager';
-import { ROWS, COLS, BLOCK_SIZE, INITIAL_DROP_INTERVAL, LOCK_DELAY, MAX_LOCK_MOVES } from '../constants';
+import { ROWS, COLS, BLOCK_SIZE, INITIAL_DROP_INTERVAL, LOCK_DELAY, MAX_LOCK_MOVES, COLORS } from '../constants';
 import { createPiece, generateBag, checkCollision, getGhostPosition, rotatePiece } from '../utils/tetrisPiece';
 import { clearLines, mergePiece, drawBoard, drawPreviewPiece } from '../utils/tetrisBoard';
 import { updateScoreDisplay, updateLevelDisplay, addLineClearEffects } from '../utils/effects';
@@ -18,7 +18,7 @@ const KEYS = {
 
 export function useTetris() {
     // Socket 훅 사용
-    const { sendGameOver } = useSocket();
+    const { sendGameOver, sendLineCleared, onReceiveGarbage } = useSocket();
     
     // Game state
     const [score, setScore] = useState(0);
@@ -174,6 +174,32 @@ export function useTetris() {
         return true;
     }, []);
 
+    // === 가비지 라인 추가 함수 ===
+    const addGarbageLines = useCallback((count) => {
+        if (count <= 0) return;
+        for (let i = 0; i < count; i++) {
+            // 맨 위 줄 삭제
+            gridRef.current.shift();
+            // 구멍 위치
+            const hole = Math.floor(Math.random() * COLS);
+            const greyIndex = COLORS.length; // garbage color index (value stored in grid)
+            const newRow = Array.from({ length: COLS }, (_, idx) => (idx === hole ? 0 : greyIndex));
+            gridRef.current.push(newRow);
+        }
+        // 피스가 겹치지 않도록 위치 보정
+        if (currentPieceRef.current) {
+            currentPieceRef.current.pos.y = Math.max(currentPieceRef.current.pos.y - count, 0);
+        }
+    }, []);
+
+    // 서버로부터 가비지 수신 리스너 등록
+    useEffect(() => {
+        const off = onReceiveGarbage(({ lines }) => {
+            addGarbageLines(lines);
+        });
+        return off;
+    }, [onReceiveGarbage, addGarbageLines]);
+
     // Drop piece
     const drop = useCallback(() => {
         if (!currentPieceRef.current || !isGameStartedRef.current) return false;
@@ -194,6 +220,7 @@ export function useTetris() {
                 gridRef.current = newGrid;
                 
                 if (linesCleared > 0) {
+                    sendLineCleared(roomIdRef.current, linesCleared);
                     addLineClearEffects(linesToClear);
                     setScore(prev => {
                         const newScore = prev + linesCleared * linesCleared * 100;
@@ -234,7 +261,8 @@ export function useTetris() {
         gridRef.current = newGrid;
         
         if (linesCleared > 0) {
-            addLineClearEffects(linesToClear);
+            sendLineCleared(roomIdRef.current, linesCleared);
+                    addLineClearEffects(linesToClear);
             setScore(prev => {
                 const newScore = prev + linesCleared * linesCleared * 100;
                 updateScoreDisplay(newScore);
