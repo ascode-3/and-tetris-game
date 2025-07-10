@@ -232,7 +232,7 @@ const TetrisPage = () => {
 
     const interval = setInterval(() => {
       updateGameState(roomId, getCurrentGameState());
-    }, 100); // Update every 100ms
+    }, 10); // Update every 100ms
 
     return () => clearInterval(interval);
   }, [socket, roomId, getCurrentGameState, updateGameState]);
