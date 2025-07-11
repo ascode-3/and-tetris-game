@@ -482,14 +482,6 @@ const miniBoard1v1Style = useMemo(() => {
           </div>
         )}
       </div>
-      {!isGameWon && (
-        <button
-          className="leave-button"
-          onClick={handleLeaveGame}
-        >
-          게임 나가기
-        </button>
-      )}
     </div>
   );
 };

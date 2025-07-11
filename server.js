@@ -307,7 +307,7 @@ io.on('connection', (socket) => {
         if (!room.targetMap || !room.targetMap.has(attackerId)) return;
         let garbage = 0;
         if (linesCleared === 1) {
-            garbage = Math.random() < 0.5 ? 1 : 0;
+            garbage = Math.random() < 0.3 ? 1 : 0;
         } else if (linesCleared === 2) {
             garbage = 1;
         } else if (linesCleared === 3) {
