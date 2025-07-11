@@ -5,13 +5,13 @@ export const BLOCK_SIZE = 30;
 
 // Colors for pieces
 export const COLORS = [
-    '#00FFFF', // cyan - I piece (더 밝은 시안)
-    '#4040FF', // blue - J piece (더 밝은 파랑)
-    '#FF8000', // orange - L piece (더 밝은 주황)
-    '#FFFF00', // yellow - O piece (밝은 노랑)
-    '#00FF00', // green - S piece (밝은 녹색)
-    '#A020F0', // purple - T piece (밝은 보라)
-    '#FF0000',  // red - Z piece (밝은 빨강)
+    '#5FC9BD', // I piece – deep teal
+    '#5A5AC9', // J piece – royal blue
+    '#C47A3A', // L piece – burnt orange
+    '#D9B73A', // O piece – goldenrod
+    '#7FBF5E', // S piece – forest green
+    '#B55EB5', // T piece – deep lavender
+    '#C75A5A', // Z piece – brick red
     '#555555'  // garbage grey
 ];
 
@@ -25,13 +25,55 @@ export const INITIAL_DROP_INTERVAL = 1000;
 
 // Tetromino shapes
 export const SHAPES = [
-    [[1, 1, 1, 1]],                    // I
-    [[1, 1, 1], [0, 1, 0]],           // T
-    [[1, 1, 1], [1, 0, 0]],           // L
-    [[1, 1, 1], [0, 0, 1]],           // J
-    [[1, 1], [1, 1]],                 // O
-    [[1, 1, 0], [0, 1, 1]],           // S
-    [[0, 1, 1], [1, 1, 0]]            // Z
+    // I
+    [
+        [0,0,0,0],
+        [1,1,1,1],
+        [0,0,0,0],
+        [0,0,0,0]
+    ],
+    // T
+    [
+        [0,0,0,0],
+        [1,1,1,0],
+        [0,1,0,0],
+        [0,0,0,0]
+    ],
+    // L
+    [
+        [0,0,1,0],
+        [1,1,1,0],
+        [0,0,0,0],
+        [0,0,0,0]
+    ],
+    // J
+    [
+        [1,0,0,0],
+        [1,1,1,0],
+        [0,0,0,0],
+        [0,0,0,0]
+    ],
+    // O
+    [
+        [0,1,1,0],
+        [0,1,1,0],
+        [0,0,0,0],
+        [0,0,0,0]
+    ],
+    // S
+    [
+        [0,1,1,0],
+        [1,1,0,0],
+        [0,0,0,0],
+        [0,0,0,0]
+    ],
+    // Z
+    [
+        [1,1,0,0],
+        [0,1,1,0],
+        [0,0,0,0],
+        [0,0,0,0]
+    ]
 ];
 
 // Key codes

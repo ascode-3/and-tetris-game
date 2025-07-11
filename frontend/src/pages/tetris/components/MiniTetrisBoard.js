@@ -10,11 +10,51 @@ const MiniTetrisBoard = ({ gameState, playerName }) => {
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
 
+    // 색상 밝기/어둡기 조정 유틸
+    const shadeColor = (hexColor, percent) => {
+        let num = parseInt(hexColor.slice(1), 16);
+        let r = (num >> 16) & 0xff;
+        let g = (num >> 8) & 0xff;
+        let b = num & 0xff;
+
+        const tint = (channel) => {
+            if (percent < 0) {
+                return Math.round(channel * (1 + percent));
+            } else {
+                return Math.round(channel * (1 - percent) + 255 * percent);
+            }
+        };
+        r = tint(r);
+        g = tint(g);
+        b = tint(b);
+        return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    };
+
+    // 미니 블록 3D 렌더
+    const drawMiniBlock = (ctx, x, y, size, color) => {
+        const posX = x * size;
+        const posY = y * size;
+        const gradient = ctx.createLinearGradient(posX, posY, posX + size, posY + size);
+        gradient.addColorStop(0, shadeColor(color, 0.3));
+        gradient.addColorStop(1, shadeColor(color, -0.3));
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(posX, posY, size, size);
+
+        // Border
+        ctx.strokeStyle = shadeColor(color, -0.45);
+        ctx.lineWidth = 0.8;
+        ctx.strokeRect(posX + 0.4, posY + 0.4, size - 0.8, size - 0.8);
+
+        // Glossy highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.fillRect(posX + 1, posY + 1, size * 0.4, size * 0.4);
+    };
+
     // 미니 보드 그리기
     const drawMiniBoard = (ctx, grid, currentPiece) => {
-        // 캔버스 초기화
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        // 캔버스 초기화 - 투명 배경을 유지하기 위해 clearRect 사용
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         
         const currentMiniBlockSize = ctx.canvas.width / MINI_BOARD_WIDTH;
         
@@ -45,13 +85,7 @@ const MiniTetrisBoard = ({ gameState, playerName }) => {
                     if (value) {
                         // value가 숫자(1~7)이면 COLORS에서 색상값을 가져옴
                         const color = typeof value === 'number' ? COLORS[value - 1] : value;
-                        ctx.fillStyle = color;
-                        ctx.fillRect(
-                            x * currentMiniBlockSize,
-                            y * currentMiniBlockSize,
-                            currentMiniBlockSize - 1,
-                            currentMiniBlockSize - 1
-                        );
+                        drawMiniBlock(ctx, x, y, currentMiniBlockSize, color);
                     }
                 });
             });
@@ -59,15 +93,15 @@ const MiniTetrisBoard = ({ gameState, playerName }) => {
 
         // 현재 움직이는 블록 그리기
         if (currentPiece) {
-            ctx.fillStyle = currentPiece.color;
             currentPiece.shape.forEach((row, y) => {
                 row.forEach((value, x) => {
                     if (value) {
-                        ctx.fillRect(
-                            (currentPiece.pos.x + x) * currentMiniBlockSize,
-                            (currentPiece.pos.y + y) * currentMiniBlockSize,
-                            currentMiniBlockSize - 1,
-                            currentMiniBlockSize - 1
+                        drawMiniBlock(
+                            ctx,
+                            currentPiece.pos.x + x,
+                            currentPiece.pos.y + y,
+                            currentMiniBlockSize,
+                            currentPiece.color
                         );
                     }
                 });
@@ -83,8 +117,9 @@ const MiniTetrisBoard = ({ gameState, playerName }) => {
         const ctx = canvas.getContext('2d');
         
         // 부모 컨테이너의 실제 렌더링된 크기를 가져옴 (CSS에 의해 결정됨)
-        const containerWidth = container.offsetWidth;
-        const containerHeight = container.offsetHeight;
+        // padding 및 border를 제외한 실제 콘텐츠 영역 크기
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
         
         // 캔버스 요소의 실제 width/height 속성을 컨테이너 크기에 맞게 조정
         // 테트리스 판 비율(10:20 = 1:2)을 유지하면서 컨테이너에 꽉 차게 만듦
@@ -108,7 +143,6 @@ const MiniTetrisBoard = ({ gameState, playerName }) => {
 
     return (
         <div className="mini-tetris-board" ref={containerRef}>
-            <div className="player-name">{playerName}</div>
             <canvas ref={canvasRef} />
         </div>
     );

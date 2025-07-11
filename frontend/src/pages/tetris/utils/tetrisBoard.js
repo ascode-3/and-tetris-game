@@ -23,33 +23,68 @@ export function drawGrid(context, width, height) {
     }
 }
 
-// Draw a single block
+// === Utility: shadeColor ===
+// 밝기 조정을 통해 색상을 밝히거나 어둡게 합니다.
+// percent 양수 : 색상을 밝게, 음수 : 어둡게 (-1 ~ 1 범위 권장)
+function shadeColor(hexColor, percent) {
+    let num = parseInt(hexColor.slice(1), 16);
+    let r = (num >> 16) & 0xff;
+    let g = (num >> 8) & 0xff;
+    let b = num & 0xff;
+
+    const tint = (channel) => {
+        if (percent < 0) {
+            return Math.round(channel * (1 + percent));
+        } else {
+            return Math.round(channel * (1 - percent) + 255 * percent);
+        }
+    };
+
+    r = tint(r);
+    g = tint(g);
+    b = tint(b);
+
+    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
+// Draw a single block with 3D effect
 export function drawBlock(ctx, x, y, color) {
-    ctx.fillStyle = color;
-    ctx.fillRect(
-        x * BLOCK_SIZE,
-        y * BLOCK_SIZE,
-        BLOCK_SIZE - 1,
-        BLOCK_SIZE - 1
-    );
-    
-    // Draw block inner border
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(
-        x * BLOCK_SIZE + 2,
-        y * BLOCK_SIZE + 2,
-        BLOCK_SIZE - 5,
-        BLOCK_SIZE - 5
-    );
+    const posX = x * BLOCK_SIZE;
+    const posY = y * BLOCK_SIZE;
+
+    // Create gradient for 3D shading
+    const gradient = ctx.createLinearGradient(posX, posY, posX + BLOCK_SIZE, posY + BLOCK_SIZE);
+    gradient.addColorStop(0, shadeColor(color, 0.3));     // lighter top-left
+    gradient.addColorStop(1, shadeColor(color, -0.3));    // darker bottom-right
+
+    // Main filled rectangle
+    ctx.fillStyle = gradient;
+    ctx.fillRect(posX, posY, BLOCK_SIZE, BLOCK_SIZE);
+
+    // Outer darker border
+    ctx.strokeStyle = shadeColor(color, -0.45);
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(posX + 0.5, posY + 0.5, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+
+    // Inner highlight (small glossy square on top-left)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.fillRect(posX + 2, posY + 2, BLOCK_SIZE * 0.4, BLOCK_SIZE * 0.4);
+
+    // Optional inner shadow bottom-right
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.beginPath();
+    ctx.moveTo(posX + BLOCK_SIZE - 1, posY + 1);
+    ctx.lineTo(posX + BLOCK_SIZE - 1, posY + BLOCK_SIZE - 1);
+    ctx.lineTo(posX + 1, posY + BLOCK_SIZE - 1);
+    ctx.stroke();
 }
 
 // Draw preview piece
 export function drawPreviewPiece(ctx, piece) {
     if (!piece) return;
 
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    // 배경을 투명하게 유지
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     
     const offsetX = (4 - piece.shape[0].length) * BLOCK_SIZE / 2;
     const offsetY = (4 - piece.shape.length) * BLOCK_SIZE / 2;

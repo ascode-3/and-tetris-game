@@ -274,20 +274,28 @@
 
 /* Mini Tetris Board */
 .mini-tetris-board {
+    box-sizing: border-box;
     background-color: rgba(0, 0, 0, 0.7);
-    padding: 10px;
+    padding: 1px;                 /* 상·하 10 px */
     border-radius: 4px;
     border: 1px solid rgba(255, 255, 255, 0.5);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    /* transition 속성 제거 - 애니메이션 없이 즉시 크기 변경 */
     min-width: 80px;
     min-height: 160px;
     width: 100%;
     height: 100%;
-    box-sizing: border-box;
+    overflow: hidden;              /* 캔버스가 넘칠 경우 잘라냄 */
+}
+
+/* 캔버스가 패딩을 제외한 영역을 100 % 채우도록 */
+.mini-tetris-board canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    box-sizing: content-box;       /* 패딩·보더 영향 없음 */
 }
 
 /* 우승 화면 스타일 */

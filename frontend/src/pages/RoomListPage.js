@@ -58,27 +58,6 @@ const RoomListPage = () => {
     navigate(`/waiting-room/${roomId}`);
   };
 
-  const handleReset = () => {
-    if (window.confirm('정말로 모든 대기실을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
-      try {
-        // 서버에 방 초기화 요청
-        socketManager.emit('resetRooms');
-        
-        // rooms 상태 초기화
-        setRooms([]);
-        
-        // 성공 메시지
-        alert('모든 대기실이 성공적으로 초기화되었습니다.');
-        
-        // 방 목록 새로고침
-        loadRooms();
-      } catch (error) {
-        console.error('초기화 중 오류 발생:', error);
-        alert('초기화 중 오류가 발생했습니다. 다시 시도해주세요.');
-      }
-    }
-  };
-
   return (
     <div style={{ 
       padding: '20px',

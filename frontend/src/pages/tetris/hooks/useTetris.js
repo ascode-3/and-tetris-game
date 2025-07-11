@@ -96,20 +96,17 @@ export function useTetris() {
     const updatePreviewDisplays = useCallback(() => {
         if (holdCanvasRef.current) {
             const ctx = holdCanvasRef.current.getContext('2d');
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, holdCanvasRef.current.width, holdCanvasRef.current.height);
+            ctx.clearRect(0, 0, holdCanvasRef.current.width, holdCanvasRef.current.height);
             drawPreviewPiece(ctx, holdPieceRef.current);
         }
         if (nextCanvasRef.current) {
             const ctx = nextCanvasRef.current.getContext('2d');
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, nextCanvasRef.current.width, nextCanvasRef.current.height);
+            ctx.clearRect(0, 0, nextCanvasRef.current.width, nextCanvasRef.current.height);
             drawPreviewPiece(ctx, nextPieceRef.current);
         }
         if (nextNextCanvasRef.current) {
             const ctx = nextNextCanvasRef.current.getContext('2d');
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, nextNextCanvasRef.current.width, nextNextCanvasRef.current.height);
+            ctx.clearRect(0, 0, nextNextCanvasRef.current.width, nextNextCanvasRef.current.height);
             drawPreviewPiece(ctx, nextNextPieceRef.current);
         }
     }, []);
@@ -460,7 +457,7 @@ export function useTetris() {
             setLevel(prevLevel => {
                 const newLevel = prevLevel + 1;
                 // 레벨이 올라갈수록 블록이 더 빨리 떨어지도록 조정 (예: 레벨당 50ms씩 감소, 최소 50ms)
-                dropIntervalRef.current = Math.max(50, INITIAL_DROP_INTERVAL - (newLevel * 50));
+                dropIntervalRef.current = Math.max(150, INITIAL_DROP_INTERVAL - (newLevel * 50));
                 updateLevelDisplay(newLevel);
                 return newLevel;
             });
@@ -499,16 +496,13 @@ export function useTetris() {
         gameCtx.fillRect(0, 0, gameBoard.width, gameBoard.height);
         
         const holdCtx = holdCanvas.getContext('2d');
-        holdCtx.fillStyle = '#000';
-        holdCtx.fillRect(0, 0, holdCanvas.width, holdCanvas.height);
+        holdCtx.clearRect(0, 0, holdCanvas.width, holdCanvas.height);
         
         const nextCtx = nextCanvas.getContext('2d');
-        nextCtx.fillStyle = '#000';
-        nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+        nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
         
         const nextNextCtx = nextNextCanvas.getContext('2d');
-        nextNextCtx.fillStyle = '#000';
-        nextNextCtx.fillRect(0, 0, nextNextCanvas.width, nextNextCanvas.height);
+        nextNextCtx.clearRect(0, 0, nextNextCanvas.width, nextNextCanvas.height);
         
         // Add keyboard event listener
         document.addEventListener('keydown', handleKeyPress);
