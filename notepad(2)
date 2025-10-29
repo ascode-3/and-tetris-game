@@ -1,0 +1,60 @@
+반갑습니다. 오랜만에 돌아온 애즈입니다.
+일단 지금 제가 보기에는 파일 구조가 너무 더럽습니다. 복잡해요. 최적화는 아니더라도
+코드 압축 혹은 코드 최소화 작업을 해야 할거 같습니다.
+
+src/
+├── assets/                  # 정적 에셋 (이미지, 폰트 등)
+│   └── sounds/             # 음성 파일
+│
+├── components/              # 공통 컴포넌트
+│   ├── ui/                 # UI 컴포넌트 (버튼, 모달 등)
+│   │   ├── Button/
+│   │   ├── Modal/
+│   │   └── ...
+│   └── layout/             # 레이아웃 컴포넌트
+│       ├── Header/
+│       ├── Footer/
+│       └── ...
+│
+├── features/               # 기능별 모듈
+│   ├── auth/               # 인증 관련
+│   │   ├── components/     # 인증 관련 컴포넌트
+│   │   ├── hooks/          # 인증 관련 훅
+│   │   └── api/            # 인증 관련 API
+│   │
+│   ├── room/               # 방 관리
+│   │   ├── components/     # 방 관련 컴포넌트
+│   │   ├── hooks/          # 방 관련 훅
+│   │   └── api/            # 방 관련 API
+│   │
+│   └── game/               # 게임 로직
+│       ├── components/     # 게임 컴포넌트 (Board, Piece 등)
+│       ├── hooks/          # 게임 훅 (useTetris 등)
+│       ├── utils/          # 게임 유틸리티
+│       └── constants.js    # 게임 상수
+│
+├── pages/                  # 페이지 컴포넌트 (라우트 기반)
+│   ├── HomePage/
+│   ├── LobbyPage/
+│   ├── RoomListPage/
+│   ├── CreateRoomPage/
+│   ├── WaitingRoomPage/
+│   └── GamePage/          # 기존 TetrisPage 대체
+│
+├── services/               # API 및 서비스
+│   ├── api/               # REST API 클라이언트
+│   ├── socket/            # 소켓 서비스
+│   └── storage/           # 로컬/세션 스토리지 유틸리티
+│
+├── styles/                # 전역 스타일
+│   ├── base/             # 기본 스타일
+│   ├── themes/           # 테마 관련
+│   └── variables.css     # CSS 변수
+│
+├── utils/                # 유틸리티 함수
+│   ├── common.js         # 공통 유틸리티
+│   └── validation.js     # 검증 유틸리티
+│
+├── App.js                # 앱 진입점
+├── App.css
+└── index.js              # 렌더링 진입점
