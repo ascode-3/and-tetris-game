@@ -7,10 +7,12 @@ const LobbyPage = () => {
 
   const handleButtonClick = (buttonName) => {
     switch(buttonName) {
+      case '좌상단': // 테트리스
+        navigate('/minitetris');
+        break;
       case '우상단': // 멀티게임
         navigate('/rooms');
         break;
-      case '좌상단': // 랭킹전
       case '좌중앙': // 랭킹
       case '우중앙': // 설정
       default:
@@ -22,7 +24,7 @@ const LobbyPage = () => {
   return (
     <div className="button-container">
       <div className="button top-left" onClick={() => handleButtonClick('좌상단')}>
-        <span>랭킹전</span>
+        <span>테트리스</span>
       </div>
       
       <div className="button middle-left" onClick={() => handleButtonClick('좌중앙')}>

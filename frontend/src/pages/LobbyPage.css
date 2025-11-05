@@ -54,7 +54,6 @@
 .middle-left {
   top: 50%;
   left: 22%;
-  transform: translateY(-50%);
 }
 
 .top-right {
@@ -65,5 +64,4 @@
 .middle-right {
   top: 50%;
   right: 22%;
-  transform: translateY(-50%);
 }

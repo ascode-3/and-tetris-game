@@ -2,13 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
-  const [isRegister, setIsRegister] = useState(false);
   const [nickname, setNickname] = useState('');
   const navigate = useNavigate();
-
-  const toggleForm = () => {
-    setIsRegister(!isRegister);
-  };
 
   const handleGuestLogin = () => {
     // Generate a random guest nickname if none provided
@@ -30,7 +25,7 @@ const LoginPage = () => {
     justifyContent: 'center',
     alignItems: 'center',
     height: '100vh',
-    backgroundImage: "url(process.env.PUBLIC_URL + '/images/background image.jpg')",
+    backgroundImage: "url(/images/background image.jpg)",
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
@@ -38,34 +33,29 @@ const LoginPage = () => {
 
   const cardStyle = {
     backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    padding: '25px',
-    borderRadius: '12px',
-    boxShadow: '0 3px 6px rgba(0, 0, 0, 0.1)',
+    padding: '30px',
+    borderRadius: '15px',
+    boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)',
     width: '320px',
-    backdropFilter: 'blur(5px)',
+    textAlign: 'center',
+    transform: 'translateY(-20px)',
+    transition: 'transform 0.3s ease',
   };
 
   const headerStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
+    textAlign: 'center',
     marginBottom: '20px',
+    fontSize: '24px',
+    fontWeight: 'bold',
+    color: '#333',
   };
 
-  const tabStyle = (active) => ({
-    background: 'none',
-    border: 'none',
-    fontSize: '15px',
-    cursor: 'pointer',
-    fontWeight: active ? 'bold' : 'normal',
-    padding: '6px 14px',
-    color: active ? '#007bff' : '#333',
-  });
-
   const avatarStyle = {
-    width: '60px',
-    height: '60px',
+    width: '80px',
+    height: '80px',
     borderRadius: '50%',
-    marginBottom: '12px',
+    margin: '0 auto 20px',
+    display: 'block',
     objectFit: 'cover',
   };
 
@@ -84,68 +74,43 @@ const LoginPage = () => {
     fontSize: '13px',
   };
 
-  const optionsStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: '15px',
-    color: 'black', 
-  };
 
   const buttonStyle = {
     width: '100%',
-    padding: '8px',
-    backgroundColor: '#007bff',
+    padding: '12px',
+    backgroundColor: '#4CAF50',
     color: 'white',
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer',
-    fontSize: '13px',
-    marginTop: '6px',
+    fontSize: '16px',
+    marginTop: '20px',
+    fontWeight: 'bold',
+    transition: 'background-color 0.3s',
   };
 
-  const footerStyle = {
-    textAlign: 'center',
-    marginTop: '15px',
-  };
 
   return (
     <div style={containerStyle}>
       <div style={cardStyle}>
         <div style={headerStyle}>
-          <button style={tabStyle(!isRegister)} onClick={toggleForm}>로그인</button>
-          <button style={tabStyle(isRegister)} onClick={toggleForm}>회원가입</button>
+          테트리스 게임
         </div>
-        <div style={{ textAlign: 'center' }}>
-          <img src="/images/login.a.png" alt="User Avatar" style={avatarStyle} />
-        </div>
-        <form style={formStyle} onSubmit={(e) => e.preventDefault()}>
+        <img src="/images/login.a.png" alt="Tetris Logo" style={avatarStyle} />
+        <form style={formStyle} onSubmit={(e) => {
+          e.preventDefault();
+          handleGuestLogin();
+        }}>
           <input 
             type="text" 
-            placeholder="닉네임" 
+            placeholder="닉네임을 입력하세요 (선택사항)" 
             style={inputStyle} 
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
+            maxLength="12"
           />
-          <input type="password" placeholder="비밀번호" style={inputStyle} />
-          {isRegister && <input type="password" placeholder="비밀번호 확인" style={inputStyle} />}
-          <div style={optionsStyle}>
-            {!isRegister && (
-              <label>
-                <input type="checkbox" /> 비밀번호 기억하기
-              </label>
-            )}
-            <button type="button" onClick={() => alert('비밀번호 찾기 기능은 아직 구현되지 않았습니다.')}>비밀번호 찾기</button>
-          </div>
-          <button type="submit" style={buttonStyle}>{isRegister ? '회원가입' : '로그인'}</button>
+          <button type="submit" style={buttonStyle}>게임 시작하기</button>
         </form>
-        <div style={footerStyle}>
-          <button 
-            type="button" 
-            onClick={isRegister ? toggleForm : handleGuestLogin}
-          >
-            {isRegister ? '로그인' : '게스트'}
-          </button>
-        </div>
       </div>
     </div>
   );
