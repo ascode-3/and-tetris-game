@@ -63,8 +63,6 @@ const MiniTetrisPage = () => {
             </div>
           </div>
         </div>
-
-        {/* 중앙: 게임 보드 */}
         <div className="center-panel">
           <div className="game-info">
             <div className="info-item">
