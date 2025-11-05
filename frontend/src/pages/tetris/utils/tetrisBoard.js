@@ -79,36 +79,93 @@ export function drawBlock(ctx, x, y, color) {
     ctx.stroke();
 }
 
-// Draw preview piece
+// Draw preview piece (Hold용)
 export function drawPreviewPiece(ctx, piece) {
     if (!piece) return;
 
     // 배경을 투명하게 유지
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     
-    const offsetX = (4 - piece.shape[0].length) * BLOCK_SIZE / 2;
-    const offsetY = (4 - piece.shape.length) * BLOCK_SIZE / 2;
+    // 블록의 실제 크기 계산
+    const shapeWidth = piece.shape[0].length;
+    const shapeHeight = piece.shape.length;
+    
+    // 중앙 정렬을 위한 오프셋 계산
+    const offsetX = (ctx.canvas.width - shapeWidth * BLOCK_SIZE) / 2;
+    const offsetY = (ctx.canvas.height - shapeHeight * BLOCK_SIZE) / 2;
     
     piece.shape.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value) {
-                ctx.fillStyle = piece.color;
-                ctx.fillRect(
-                    x * BLOCK_SIZE + offsetX,
-                    y * BLOCK_SIZE + offsetY,
-                    BLOCK_SIZE - 1,
-                    BLOCK_SIZE - 1
-                );
+                const posX = x * BLOCK_SIZE + offsetX;
+                const posY = y * BLOCK_SIZE + offsetY;
                 
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-                ctx.lineWidth = 1;
-                ctx.strokeRect(
-                    x * BLOCK_SIZE + offsetX + 2,
-                    y * BLOCK_SIZE + offsetY + 2,
-                    BLOCK_SIZE - 5,
-                    BLOCK_SIZE - 5
-                );
+                // 3D 효과를 위한 그라데이션
+                const gradient = ctx.createLinearGradient(posX, posY, posX + BLOCK_SIZE, posY + BLOCK_SIZE);
+                gradient.addColorStop(0, shadeColor(piece.color, 0.3));
+                gradient.addColorStop(1, shadeColor(piece.color, -0.3));
+                
+                // 메인 블록
+                ctx.fillStyle = gradient;
+                ctx.fillRect(posX, posY, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+                
+                // 외곽선
+                ctx.strokeStyle = shadeColor(piece.color, -0.45);
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(posX + 0.5, posY + 0.5, BLOCK_SIZE - 3, BLOCK_SIZE - 3);
+                
+                // 하이라이트
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.fillRect(posX + 2, posY + 2, BLOCK_SIZE * 0.35, BLOCK_SIZE * 0.35);
             }
+        });
+    });
+}
+
+// Draw next pieces (4개를 세로로 표시)
+export function drawNextPieces(ctx, pieces) {
+    if (!pieces || pieces.length === 0) return;
+    
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    
+    const spacing = 8; // 블록 사이 간격
+    const blockAreaHeight = BLOCK_SIZE * 3; // 각 블록당 할당된 높이
+    
+    pieces.forEach((piece, index) => {
+        if (!piece) return;
+        
+        const shapeWidth = piece.shape[0].length;
+        const shapeHeight = piece.shape.length;
+        
+        // 각 블록의 시작 Y 위치
+        const startY = index * blockAreaHeight + spacing;
+        
+        // 중앙 정렬
+        const offsetX = (ctx.canvas.width - shapeWidth * BLOCK_SIZE) / 2;
+        const offsetY = startY + (blockAreaHeight - shapeHeight * BLOCK_SIZE) / 2;
+        
+        piece.shape.forEach((row, y) => {
+            row.forEach((value, x) => {
+                if (value) {
+                    const posX = x * BLOCK_SIZE + offsetX;
+                    const posY = y * BLOCK_SIZE + offsetY;
+                    
+                    // 3D 효과
+                    const gradient = ctx.createLinearGradient(posX, posY, posX + BLOCK_SIZE, posY + BLOCK_SIZE);
+                    gradient.addColorStop(0, shadeColor(piece.color, 0.3));
+                    gradient.addColorStop(1, shadeColor(piece.color, -0.3));
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(posX, posY, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+                    
+                    ctx.strokeStyle = shadeColor(piece.color, -0.45);
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeRect(posX + 0.5, posY + 0.5, BLOCK_SIZE - 3, BLOCK_SIZE - 3);
+                    
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.fillRect(posX + 2, posY + 2, BLOCK_SIZE * 0.35, BLOCK_SIZE * 0.35);
+                }
+            });
         });
     });
 }
