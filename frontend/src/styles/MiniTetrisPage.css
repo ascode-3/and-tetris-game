@@ -7,10 +7,33 @@
 }
 
 .mini-tetris-container h1 {
-  color: white;
+  color: #333;
   margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   font-size: 2.5rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.difficulty-badge {
+  font-size: 0.8em;
+  padding: 0.3em 0.8em;
+  border-radius: 20px;
+  color: white;
+  font-weight: normal;
+}
+
+.difficulty-badge[data-difficulty="easy"] {
+  background-color: #4caf50;
+}
+
+.difficulty-badge[data-difficulty="normal"] {
+  background-color: #ff9800;
+}
+
+.difficulty-badge[data-difficulty="hard"] {
+  background-color: #f44336;
 }
 
 .game-layout {

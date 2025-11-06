@@ -1,10 +1,11 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useMiniTetris } from './tetris/hooks/useMiniTetris';
 import '../styles/MiniTetrisPage.css';
 
 const MiniTetrisPage = () => {
   const navigate = useNavigate();
+  const { difficulty } = useParams();
   
   const {
     linesCleared,
@@ -23,6 +24,21 @@ const MiniTetrisPage = () => {
     setHoldCanvasRef,
     setNextCanvasRef
   } = useMiniTetris();
+
+  // 난이도에 따른 게임 속도 설정
+  const getGameSpeed = () => {
+    switch(difficulty) {
+      case 'easy':
+        return 800; // 느린 속도
+      case 'hard':
+        return 300; // 빠른 속도
+      case 'normal':
+      default:
+        return 500; // 기본 속도
+    }
+  };
+
+  const GAME_SPEED = getGameSpeed();
 
   // 시간을 분:초 형식으로 변환
   const formatTime = (seconds) => {
@@ -43,7 +59,6 @@ const MiniTetrisPage = () => {
 
   return (
     <div className="mini-tetris-container">
-      
       <div className="game-layout">
         {/* 왼쪽: Hold 및 조작법 */}
         <div className="side-panel left-panel">

@@ -1,0 +1,173 @@
+.difficulty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100vh;
+  color: #333;
+  font-family: 'Arial', sans-serif;
+  padding-top: 5vh;
+  overflow: hidden;
+}
+
+.difficulty-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.difficulty-header h1 {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 0.8rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.instruction-image {
+  margin-top: 0.5rem;
+}
+
+.instruction-image img {
+  max-width: 200px;
+  height: auto;
+  opacity: 0.8;
+}
+
+/* 슬라이더 컨테이너 */
+.slider-container {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 3rem;
+  margin-top: 4rem;
+}
+
+/* 중앙 가로선 */
+.slider-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    #cbd5e0 20%,
+    #cbd5e0 80%,
+    transparent 100%
+  );
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+/* 슬라이더 트랙 */
+.slider-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 2000%;
+  cursor: grab;
+  user-select: none;
+  z-index: 2;
+}
+
+.slider-track:active {
+  cursor: grabbing;
+}
+
+/* 레벨 원 */
+.level-circle {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #a8b8d8 0%, #8b9dc3 100%);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: white;
+  will-change: transform, opacity;
+}
+
+.level-circle.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  z-index: 10;
+}
+
+/* 선택 정보 */
+.selection-info {
+  text-align: center;
+  background: white;
+  padding: 1.5rem 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+  min-width: 280px;
+}
+
+.selection-info h2 {
+  font-size: 1.6rem;
+  color: #667eea;
+  margin-bottom: 0.4rem;
+  font-weight: bold;
+}
+
+.selection-info p {
+  color: #718096;
+  margin-bottom: 1.2rem;
+  font-size: 0.95rem;
+}
+
+.select-button {
+  padding: 10px 32px;
+  font-size: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+}
+
+.select-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 14px rgba(102, 126, 234, 0.4);
+}
+
+.select-button:active {
+  transform: translateY(0);
+}
+
+/* 뒤로 가기 버튼 */
+.back-button {
+  padding: 8px 20px;
+  background-color: #e2e8f0;
+  color: #4a5568;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.back-button:hover {
+  background-color: #cbd5e0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.back-button:active {
+  transform: translateY(0);
+}

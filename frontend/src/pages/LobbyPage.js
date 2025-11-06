@@ -8,7 +8,7 @@ const LobbyPage = () => {
   const handleButtonClick = (buttonName) => {
     switch(buttonName) {
       case '좌상단': // 테트리스
-        navigate('/minitetris');
+        navigate('/select-difficulty');
         break;
       case '우상단': // 멀티게임
         navigate('/rooms');

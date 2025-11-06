@@ -8,6 +8,7 @@ import CreateRoomPage from './pages/CreateRoomPage';
 import WaitingRoomPage from './pages/WaitingRoomPage';
 import TetrisPage from './pages/tetris/TetrisPage';
 import MiniTetrisPage from './pages/MiniTetrisPage';
+import DifficultySelectPage from './pages/DifficultySelectPage';
 
 const App = () => {
   return (
@@ -20,7 +21,8 @@ const App = () => {
         <Route path="/create-room"           element={<CreateRoomPage />} />
         <Route path="/waiting-room/:roomId"  element={<WaitingRoomPage />} />
         <Route path="/tetris/:roomId"        element={<TetrisPage />} />
-        <Route path="/minitetris"            element={<MiniTetrisPage />} />
+        <Route path="/select-difficulty"      element={<DifficultySelectPage />} />
+        <Route path="/minitetris/:difficulty" element={<MiniTetrisPage />} />
       </Routes>
     </>
   );
