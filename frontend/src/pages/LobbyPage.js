@@ -11,8 +11,8 @@ const LobbyPage = () => {
         navigate('/select-difficulty');
         break;
       case '우상단': // 멀티게임
-        navigate('/rooms');
-        break;
+        /*navigate('/rooms');
+        break; */
       case '좌중앙': // 랭킹
       case '우중앙': // 설정
       default:

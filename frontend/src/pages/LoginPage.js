@@ -32,7 +32,7 @@ const LoginPage = () => {
   };
 
   const cardStyle = {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     padding: '30px',
     borderRadius: '15px',
     boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)',
@@ -47,7 +47,7 @@ const LoginPage = () => {
     marginBottom: '20px',
     fontSize: '24px',
     fontWeight: 'bold',
-    color: '#333',
+    color: '#000000ff',
   };
 
   const avatarStyle = {
@@ -96,7 +96,7 @@ const LoginPage = () => {
         <div style={headerStyle}>
           테트리스 게임
         </div>
-        <img src="/images/login.a.png" alt="Tetris Logo" style={avatarStyle} />
+        <img src="/images/1login.a.png" alt="Tetris Logo" style={avatarStyle} />
         <form style={formStyle} onSubmit={(e) => {
           e.preventDefault();
           handleGuestLogin();

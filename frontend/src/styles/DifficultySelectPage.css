@@ -28,9 +28,8 @@
 }
 
 .instruction-image img {
-  max-width: 200px;
+  max-width: 250px;
   height: auto;
-  opacity: 0.8;
 }
 
 /* 슬라이더 컨테이너 */
@@ -69,7 +68,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 2000%;
+  height: 300%;
   cursor: grab;
   user-select: none;
   z-index: 2;

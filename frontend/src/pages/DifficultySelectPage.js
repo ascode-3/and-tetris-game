@@ -81,7 +81,6 @@ const DifficultySelectPage = () => {
   return (
     <div className="difficulty-container">
       <div className="difficulty-header">
-        <h1>레벨 선택</h1>
         <div className="instruction-image">
           <img src="/images/login.a.png" alt="드래그 안내" />
         </div>
@@ -119,8 +118,8 @@ const DifficultySelectPage = () => {
       </div>
 
       <div className="selection-info">
-        <h2>레벨 {Math.round(selectedLevel) + 1}</h2>
-        <p>이 레벨을 시작하시겠습니까?</p>
+        <h2>지구 {/*{Math.round(selectedLevel) + 1}*/}</h2>
+        <p>일반 테트리스{/*이 레벨을 시작하시겠습니까?*/}</p>
         <button onClick={handleDifficultySelect} className="select-button">
           선택하기
         </button>
