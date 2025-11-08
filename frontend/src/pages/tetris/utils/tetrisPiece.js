@@ -16,17 +16,108 @@ export function generateBag() {
     return shuffleArray(indices);
 }
 
+// SRS: All rotation states for each piece
+// 배열 인덱스: [I, T, L, J, O, S, Z]
+const ROTATION_STATES = [
+    // I piece (4x4 grid)
+    [
+        [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], // 0°
+        [[0,0,1,0],[0,0,1,0],[0,0,1,0],[0,0,1,0]], // 90°
+        [[0,0,0,0],[0,0,0,0],[1,1,1,1],[0,0,0,0]], // 180°
+        [[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]]  // 270°
+    ],
+    // T piece (3x3 grid in 4x4)
+    [
+        [[0,1,0,0],[1,1,1,0],[0,0,0,0],[0,0,0,0]], // 0°
+        [[0,1,0,0],[0,1,1,0],[0,1,0,0],[0,0,0,0]], // 90°
+        [[0,0,0,0],[1,1,1,0],[0,1,0,0],[0,0,0,0]], // 180°
+        [[0,1,0,0],[1,1,0,0],[0,1,0,0],[0,0,0,0]]  // 270°
+    ],
+    // L piece
+    [
+        [[0,0,1,0],[1,1,1,0],[0,0,0,0],[0,0,0,0]], // 0°
+        [[0,1,0,0],[0,1,0,0],[0,1,1,0],[0,0,0,0]], // 90°
+        [[0,0,0,0],[1,1,1,0],[1,0,0,0],[0,0,0,0]], // 180°
+        [[1,1,0,0],[0,1,0,0],[0,1,0,0],[0,0,0,0]]  // 270°
+    ],
+    // J piece
+    [
+        [[1,0,0,0],[1,1,1,0],[0,0,0,0],[0,0,0,0]], // 0°
+        [[0,1,1,0],[0,1,0,0],[0,1,0,0],[0,0,0,0]], // 90°
+        [[0,0,0,0],[1,1,1,0],[0,0,1,0],[0,0,0,0]], // 180°
+        [[0,1,0,0],[0,1,0,0],[1,1,0,0],[0,0,0,0]]  // 270°
+    ],
+    // O piece (doesn't rotate, but has 4 identical states)
+    [
+        [[0,1,1,0],[0,1,1,0],[0,0,0,0],[0,0,0,0]],
+        [[0,1,1,0],[0,1,1,0],[0,0,0,0],[0,0,0,0]],
+        [[0,1,1,0],[0,1,1,0],[0,0,0,0],[0,0,0,0]],
+        [[0,1,1,0],[0,1,1,0],[0,0,0,0],[0,0,0,0]]
+    ],
+    // S piece
+    [
+        [[0,1,1,0],[1,1,0,0],[0,0,0,0],[0,0,0,0]], // 0°
+        [[0,1,0,0],[0,1,1,0],[0,0,1,0],[0,0,0,0]], // 90°
+        [[0,0,0,0],[0,1,1,0],[1,1,0,0],[0,0,0,0]], // 180°
+        [[1,0,0,0],[1,1,0,0],[0,1,0,0],[0,0,0,0]]  // 270°
+    ],
+    // Z piece
+    [
+        [[1,1,0,0],[0,1,1,0],[0,0,0,0],[0,0,0,0]], // 0°
+        [[0,0,1,0],[0,1,1,0],[0,1,0,0],[0,0,0,0]], // 90°
+        [[0,0,0,0],[1,1,0,0],[0,1,1,0],[0,0,0,0]], // 180°
+        [[0,1,0,0],[1,1,0,0],[1,0,0,0],[0,0,0,0]]  // 270°
+    ]
+];
+
+// SRS Wall Kick Data
+// For J, L, S, T, Z pieces
+const JLSTZ_WALL_KICKS = {
+    '0->1': [[0,0], [-1,0], [-1,+1], [0,-2], [-1,-2]],
+    '1->0': [[0,0], [+1,0], [+1,-1], [0,+2], [+1,+2]],
+    '1->2': [[0,0], [+1,0], [+1,-1], [0,+2], [+1,+2]],
+    '2->1': [[0,0], [-1,0], [-1,+1], [0,-2], [-1,-2]],
+    '2->3': [[0,0], [+1,0], [+1,+1], [0,-2], [+1,-2]],
+    '3->2': [[0,0], [-1,0], [-1,-1], [0,+2], [-1,+2]],
+    '3->0': [[0,0], [-1,0], [-1,-1], [0,+2], [-1,+2]],
+    '0->3': [[0,0], [+1,0], [+1,+1], [0,-2], [+1,-2]]
+};
+
+// For I piece
+const I_WALL_KICKS = {
+    '0->1': [[0,0], [-2,0], [+1,0], [-2,-1], [+1,+2]],
+    '1->0': [[0,0], [+2,0], [-1,0], [+2,+1], [-1,-2]],
+    '1->2': [[0,0], [-1,0], [+2,0], [-1,+2], [+2,-1]],
+    '2->1': [[0,0], [+1,0], [-2,0], [+1,-2], [-2,+1]],
+    '2->3': [[0,0], [+2,0], [-1,0], [+2,+1], [-1,-2]],
+    '3->2': [[0,0], [-2,0], [+1,0], [-2,-1], [+1,+2]],
+    '3->0': [[0,0], [+1,0], [-2,0], [+1,-2], [-2,+1]],
+    '0->3': [[0,0], [-1,0], [+2,0], [-1,+2], [+2,-1]]
+};
+
+// O piece doesn't need wall kicks (doesn't rotate meaningfully)
+const O_WALL_KICKS = {
+    '0->1': [[0,0]],
+    '1->0': [[0,0]],
+    '1->2': [[0,0]],
+    '2->1': [[0,0]],
+    '2->3': [[0,0]],
+    '3->2': [[0,0]],
+    '3->0': [[0,0]],
+    '0->3': [[0,0]]
+};
+
 // Create a new piece
 export function createPiece(typeId) {
     return {
         pos: { 
-            x: Math.floor(COLS / 2) - Math.floor(SHAPES[typeId][0].length / 2),
-            y: 0 
+            x: Math.floor(COLS / 2) - 2, // SRS spawn: 중앙에서 약간 왼쪽
+            y: typeId === 0 ? -1 : 0     // I piece는 한 칸 위에서 시작
         },
-        shape: SHAPES[typeId],
+        shape: ROTATION_STATES[typeId][0],
         color: COLORS[typeId],
-        type: typeId,           // 추가: 테트로미노 종류 식별용
-        orientation: 0          // 추가: 회전 상태 (0,1,2,3)
+        type: typeId,
+        orientation: 0
     };
 }
 
@@ -59,69 +150,47 @@ export function checkCollision(piece, grid) {
     );
 }
 
-// Rotate piece
-export function rotatePiece(piece, grid) {
-    // Helper: rotate matrix CW
-    const rotateMatrixCW = (matrix) => matrix[0].map((_, i) => matrix.map(row => row[i]).reverse());
-
-    // Helper: pivot finder – pick block with most direct neighbours (up/down/left/right)
-    const findPivot = (shape) => {
-        let best = {x:0, y:0, score:-1};
-        const h = shape.length;
-        const w = shape[0].length;
-        const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
-        for (let y=0; y<h; y++){
-            for (let x=0; x<w; x++){
-                if(!shape[y][x]) continue;
-                let score=0;
-                for(const [dx,dy] of dirs){
-                    const nx=x+dx, ny=y+dy;
-                    if(nx>=0 && nx<w && ny>=0 && ny<h && shape[ny][nx]) score++;
-                }
-                if(score>best.score){ best={x,y,score}; }
-            }
-        }
-        return {x:best.x, y:best.y};
-    };
-
-    // SRS kick tables
-    const JLSTZ_KICKS = {"0->1": [[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],"1->2": [[0,0],[1,0],[1,-1],[0,2],[1,2]],"2->3": [[0,0],[1,0],[1,1],[0,-2],[1,-2]],"3->0": [[0,0],[-1,0],[-1,-1],[0,2],[-1,2]]};
-    const I_KICKS  = {"0->1": [[0,0],[-2,0],[1,0],[-2,-1],[1,2]],"1->2": [[0,0],[-1,0],[2,0],[-1,2],[2,-1]],"2->3": [[0,0],[2,0],[-1,0],[2,1],[-1,-2]],"3->0": [[0,0],[1,0],[-2,0],[1,-2],[-2,1]]};
-
-    const newOrientation = (piece.orientation + 1) % 4;
-    const rotatedShape = rotateMatrixCW(piece.shape);
-
-    // pivot offset 계산 → 회전 전후 위치 보정
-    const oldPivot = findPivot(piece.shape);
-    const newPivot = findPivot(rotatedShape);
-    const pivotDx = oldPivot.x - newPivot.x;
-    const pivotDy = oldPivot.y - newPivot.y;
-
-    // kick table 선택
-    let kicks;
-    if (piece.type === 0) {
-        kicks = I_KICKS[`${piece.orientation}->${newOrientation}`];
-    } else if (piece.type === 4) {
-        kicks = [[0,0]];
-    } else {
-        kicks = JLSTZ_KICKS[`${piece.orientation}->${newOrientation}`];
+// Rotate piece (clockwise by default, dir = -1 for CCW)
+export function rotatePiece(piece, grid, dir = 1) {
+    const currentOrientation = piece.orientation;
+    const newOrientation = (currentOrientation + dir + 4) % 4;
+    
+    // Get wall kick table based on piece type
+    let wallKicks;
+    if (piece.type === 0) { // I piece
+        wallKicks = I_WALL_KICKS;
+    } else if (piece.type === 4) { // O piece
+        wallKicks = O_WALL_KICKS;
+    } else { // J, L, S, T, Z pieces
+        wallKicks = JLSTZ_WALL_KICKS;
     }
-
+    
+    // Get kick tests for this rotation
+    const kickKey = `${currentOrientation}->${newOrientation}`;
+    const kicks = wallKicks[kickKey] || [[0,0]];
+    
+    // Try each kick offset
     for (const [dx, dy] of kicks) {
         const testPiece = {
             ...piece,
-            shape: rotatedShape,
+            shape: ROTATION_STATES[piece.type][newOrientation],
             orientation: newOrientation,
-            pos: { x: piece.pos.x + pivotDx + dx, y: piece.pos.y + pivotDy + dy }
+            pos: { 
+                x: piece.pos.x + dx, 
+                y: piece.pos.y - dy  // SRS uses -dy (up is negative)
+            }
         };
+        
         if (!checkCollision(testPiece, grid)) {
             return testPiece;
         }
     }
+    
+    // Rotation failed
     return null;
 }
 
-// Move piece
+// Move piece horizontally
 export function movePiece(piece, dir, grid) {
     const newPos = { x: piece.pos.x + dir, y: piece.pos.y };
     if (!checkCollision({ ...piece, pos: newPos }, grid)) {
@@ -130,7 +199,7 @@ export function movePiece(piece, dir, grid) {
     return piece.pos;
 }
 
-// Drop piece
+// Drop piece down by one
 export function dropPiece(piece, grid) {
     const newPos = { x: piece.pos.x, y: piece.pos.y + 1 };
     if (!checkCollision({ ...piece, pos: newPos }, grid)) {

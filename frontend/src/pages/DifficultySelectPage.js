@@ -4,7 +4,7 @@ import '../styles/DifficultySelectPage.css';
 
 const DifficultySelectPage = () => {
   const navigate = useNavigate();
-  const [selectedLevel, setSelectedLevel] = useState(4); // 중앙 레벨 (0-8, 소수점 가능)
+  const [selectedLevel, setSelectedLevel] = useState(4);
   const [isDragging, setIsDragging] = useState(false);
   const sliderRef = useRef(null);
   const startXRef = useRef(0);
@@ -12,8 +12,20 @@ const DifficultySelectPage = () => {
 
   const levels = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
+  const planets = [
+    { name: '태양', desc: ['미정', '최종 난이도'], color: 'beginner' },
+    { name: '수성', desc: ['미정'], color: 'easy' },
+    { name: '금성', desc: ['미정'], color: 'normal' },
+    { name: '지구', desc: ['미정'], color: 'medium' },
+    { name: '화성', desc: ['미정'], color: 'intermediate' },
+    { name: '목성', desc: ['미정'], color: 'hard' },
+    { name: '토성', desc: ['미정'], color: 'very-hard' },
+    { name: '천왕성', desc: ['미정'], color: 'expert' },
+    { name: '해왕성', desc: ['미정'], color: 'master' }
+  ];
+
   const handleDifficultySelect = () => {
-    const difficulty = Math.round(selectedLevel) + 1; // 1-9
+    const difficulty = Math.round(selectedLevel) + 1;
     navigate(`/minitetris/${difficulty}`);
   };
 
@@ -37,10 +49,9 @@ const DifficultySelectPage = () => {
     if (!isDragging) return;
     
     const deltaX = e.clientX - startXRef.current;
-    const levelOffset = deltaX / 80; // 80px당 1레벨, 소수점 포함
+    const levelOffset = deltaX / 80;
     const newLevel = startLevelRef.current - levelOffset;
     
-    // 범위 제한
     const clampedLevel = Math.max(0, Math.min(8, newLevel));
     setSelectedLevel(clampedLevel);
   };
@@ -58,7 +69,6 @@ const DifficultySelectPage = () => {
 
   const handleMouseUp = () => {
     setIsDragging(false);
-    // 손을 떼면 가장 가까운 정수 레벨로 스냅
     setSelectedLevel(Math.round(selectedLevel));
   };
 
@@ -82,7 +92,8 @@ const DifficultySelectPage = () => {
     <div className="difficulty-container">
       <div className="difficulty-header">
         <div className="instruction-image">
-          <img src="/images/login.a.png" alt="드래그 안내" />
+          <img src={`/images/${Math.round(selectedLevel) + 1}.png`} 
+         alt={planets[Math.round(selectedLevel)].name} />
         </div>
       </div>
 
@@ -94,8 +105,8 @@ const DifficultySelectPage = () => {
           onTouchStart={handleTouchStart}
         >
           {levels.map((level, index) => {
-            const offset = (index - selectedLevel) * 120; // selectedLevel이 소수점일 수 있음
-            const isCenter = Math.abs(index - selectedLevel) < 0.5; // 가장 가까운 원
+            const offset = (index - selectedLevel) * 120;
+            const isCenter = Math.abs(index - selectedLevel) < 0.5;
             const distance = Math.abs(index - selectedLevel);
             const scale = isCenter ? 1.5 : Math.max(0.6, 1 - distance * 0.15);
             const opacity = Math.max(0.3, 1 - distance * 0.2);
@@ -108,18 +119,28 @@ const DifficultySelectPage = () => {
                   transform: `translateX(${offset}px) scale(${scale})`,
                   opacity: opacity,
                   transition: 'transform 0.5s ease-out, opacity 0.5s ease-out'
-
                 }}
-              >
-              </div>
+                >
+                <img src={`/images/${level}.png`} alt={planets[level-1].name} 
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                </div>
             );
           })}
         </div>
       </div>
 
       <div className="selection-info">
-        <h2>지구 {/*{Math.round(selectedLevel) + 1}*/}</h2>
-        <p>일반 테트리스{/*이 레벨을 시작하시겠습니까?*/}</p>
+        <h2>{planets[Math.round(selectedLevel)].name}</h2>
+        <div className="difficulty-tags">
+          {planets[Math.round(selectedLevel)].desc.map((description, index) => (
+            <span 
+              key={index} 
+              className={`difficulty-tag ${planets[Math.round(selectedLevel)].color}`}
+            >
+              {description}
+            </span>
+          ))}
+        </div>
         <button onClick={handleDifficultySelect} className="select-button">
           선택하기
         </button>

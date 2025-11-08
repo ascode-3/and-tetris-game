@@ -32,6 +32,12 @@
   height: auto;
 }
 
+.instruction-image img {
+  width: 250px;  /* 고정 너비 */
+  height: 250px; /* 고정 높이 */
+  object-fit: contain; /* 비율 유지하면서 크기 맞춤 */
+}
+
 /* 슬라이더 컨테이너 */
 .slider-container {
   position: relative;
@@ -101,6 +107,74 @@
   z-index: 10;
 }
 
+/* 기본 태그 스타일 */
+.difficulty-tag {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+/* 여러 태그를 감싸는 컨테이너 */
+.difficulty-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+/* 각 난이도별 색상 */
+.difficulty-tag.beginner {
+  background: linear-gradient(135deg, #a8e6cf, #7fcdbb);
+  color: #1a5f4a;
+}
+
+.difficulty-tag.easy {
+  background: linear-gradient(135deg, #91e5f6, #64c7e2);
+  color: #0d5c75;
+}
+
+.difficulty-tag.normal {
+  background: linear-gradient(135deg, #84d9f7, #5eb8e4);
+  color: #0b4a63;
+}
+
+.difficulty-tag.medium {
+  background: linear-gradient(135deg, #ffd93d, #f4c430);
+  color: #6b5b00;
+}
+
+.difficulty-tag.intermediate {
+  background: linear-gradient(135deg, #ffb347, #ff9a2e);
+  color: #7a3800;
+}
+
+.difficulty-tag.hard {
+  background: linear-gradient(135deg, #ff8c94, #ff6b75);
+  color: #8b0000;
+}
+
+.difficulty-tag.very-hard {
+  background: linear-gradient(135deg, #ff6b9d, #ff477e);
+  color: #7a002e;
+}
+
+.difficulty-tag.expert {
+  background: linear-gradient(135deg, #c77dff, #9d4edd);
+  color: #3c096c;
+}
+
+.difficulty-tag.master {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
 /* 선택 정보 */
 .selection-info {
   text-align: center;
@@ -110,6 +184,10 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   margin-bottom: 1.5rem;
   min-width: 280px;
+   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 .selection-info h2 {
