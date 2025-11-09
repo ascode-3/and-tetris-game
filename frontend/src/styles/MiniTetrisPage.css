@@ -309,3 +309,61 @@
 .back-button:active {
   transform: translateY(0);
 }
+
+.effect-panel {
+  margin: 20px 0;
+}
+
+.effect-description {
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 5px;
+  min-height: 80px;        /* 👈 최소 높이 */
+  max-height: 120px;       /* 👈 최대 높이 고정 */
+  height: 100px;           /* 👈 고정 높이 */
+  overflow-y: auto;        /* 👈 넘치면 스크롤 */
+  display: flex;
+  align-items: center;     /* 👈 세로 중앙 정렬 */
+  justify-content: center; /* 👈 가로 중앙 정렬 */
+}
+
+.effect-description p {
+  margin: 0;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+  word-break: keep-all;    /* 👈 한글 단어 단위로 줄바꿈 */
+}
+
+.effect-panel h3 {
+  color: #fff;
+  margin-bottom: 7px;
+  font-size: 18px;
+  text-align: center;
+}
+
+.effect-panel p {
+ white-space: pre-line;
+ font-size: 0.8rem;
+}
+
+/* 스크롤바 스타일링 (선택사항) */
+.effect-description::-webkit-scrollbar {
+  width: 6px;
+}
+
+.effect-description::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+}
+
+.effect-description::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.effect-description::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}

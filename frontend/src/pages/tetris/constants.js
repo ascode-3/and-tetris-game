@@ -19,9 +19,9 @@ export const COLORS = [
 export const GHOST_PIECE_OPACITY = 0.3;
 
 // Game mechanics
-export const LOCK_DELAY = 500;
+export const LOCK_DELAY = 250;
 export const MAX_LOCK_MOVES = 15;
-export const INITIAL_DROP_INTERVAL = 1000;
+export const INITIAL_DROP_INTERVAL = 500;
 
 // Tetromino shapes
 export const SHAPES = [

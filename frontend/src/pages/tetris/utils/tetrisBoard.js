@@ -171,13 +171,19 @@ export function drawNextPieces(ctx, pieces) {
 }
 
 // Draw the entire game board
-export function drawBoard(ctx, grid, currentPiece, ghostPiece) {
+export function drawBoard(ctx, grid, currentPiece, ghostPiece, isInvisible = false) {
     // Clear canvas with black background
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     
     // Draw grid lines
     drawGrid(ctx, ctx.canvas.width, ctx.canvas.height);
+    
+    // 목성 투명화 효과 적용
+    if (isInvisible) {
+        console.log('✅ 투명화 적용 중!'); // 👈 추가
+        ctx.globalAlpha = 0.05;
+    }
     
     // Draw placed pieces
     grid.forEach((row, y) => {
@@ -190,7 +196,7 @@ export function drawBoard(ctx, grid, currentPiece, ghostPiece) {
     
     // Draw ghost piece
     if (ghostPiece) {
-        ctx.globalAlpha = GHOST_PIECE_OPACITY;
+        ctx.globalAlpha = isInvisible ? 0.05 * GHOST_PIECE_OPACITY : GHOST_PIECE_OPACITY;
         ghostPiece.shape.forEach((row, y) => {
             row.forEach((value, x) => {
                 if (value) {
@@ -198,7 +204,7 @@ export function drawBoard(ctx, grid, currentPiece, ghostPiece) {
                 }
             });
         });
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha = isInvisible ? 0.05 : 1;
     }
     
     // Draw current piece
@@ -210,6 +216,11 @@ export function drawBoard(ctx, grid, currentPiece, ghostPiece) {
                 }
             });
         });
+    }
+    
+    // 투명도 원래대로 복구
+    if (isInvisible) {
+        ctx.globalAlpha = 1.0;
     }
 }
 

@@ -12,6 +12,7 @@ const DifficultySelectPage = () => {
 
   const levels = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
+  /* 행성별 태그, 설명 글 */
   const planets = [
     { 
       name: '태양', 
@@ -23,7 +24,7 @@ const DifficultySelectPage = () => {
     },
     { 
       name: '수성', 
-      desc: ['온도 차', '공전 빠름'], 
+      desc: ['온도차', '공전 빠름'], 
       color: 'easy',
       description: `수성은 태양에 가장 가까운 행성으로 88일 만에 공전합니다.
       대기가 거의 없어 낮에는 430°C, 밤에는 -180°C로 태양계에서 가장 극심한 온도 차를 보입니다.
@@ -59,7 +60,7 @@ const DifficultySelectPage = () => {
     },
     { 
       name: '목성', 
-      desc: ['가스'], 
+      desc: ['혼돈', '대적점'], 
       color: 'hard',
       description: `목성은 태양계에서 가장 큰 행성으로,
       고체 표면 없이 수소와 헬륨 가스로 이루어져 있습니다.
@@ -93,8 +94,11 @@ const DifficultySelectPage = () => {
   ];
 
   const handleDifficultySelect = () => {
-    const difficulty = Math.round(selectedLevel) + 1;
-    navigate(`/minitetris/${difficulty}`);
+    const planetIndex = Math.round(selectedLevel);
+    // 행성 이름을 소문자 영문 ID로 변환
+    const planetIds = ['sun', 'mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
+    const planetId = planetIds[planetIndex];
+    navigate(`/minitetris/${planetId}`);
   };
 
   const handleBack = () => {

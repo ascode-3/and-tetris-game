@@ -1,11 +1,15 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMiniTetris } from './tetris/hooks/useMiniTetris';
+import { isEffectEnabled } from '../config/planetEffects';
 import '../styles/MiniTetrisPage.css';
 
 const MiniTetrisPage = () => {
   const navigate = useNavigate();
   const { difficulty } = useParams();
+  
+  // difficulty를 행성 ID로 사용 (예: 'sun', 'earth', 'mars' 등)
+  const planetId = difficulty || 'earth';
   
   const {
     linesCleared,
@@ -22,8 +26,12 @@ const MiniTetrisPage = () => {
     togglePause,
     setGameBoardRef,
     setHoldCanvasRef,
-    setNextCanvasRef
-  } = useMiniTetris();
+    setNextCanvasRef,
+    planetEffects
+  } = useMiniTetris(planetId);
+  
+  // 금성: Next 숨기기
+  const hideNext = isEffectEnabled(planetEffects, 'hideNext');
 
   // 난이도에 따른 게임 속도 설정
   const getGameSpeed = () => {
@@ -48,7 +56,7 @@ const MiniTetrisPage = () => {
   };
 
   const handleBackToLobby = () => {
-    navigate('/lobby');
+    navigate('/select-difficulty');
   };
 
   const handleStartGame = () => {
@@ -66,6 +74,7 @@ const MiniTetrisPage = () => {
             <h3>Hold</h3>
             <canvas ref={setHoldCanvasRef} className="preview-canvas" />
           </div>
+          
           <div className="panel-section controls-panel">
             <h3>조작법</h3>
             <div className="controls-list">
@@ -77,7 +86,17 @@ const MiniTetrisPage = () => {
               <p>P / ESC : 일시정지</p>
             </div>
           </div>
+
+          {/* 방해 효과 섹션 */}
+          <div className="panel-section effect-panel">
+            <h3>방해 효과</h3>
+            <div className="effect-description">
+              <p>{planetEffects.effectDescription || '방해 효과 없음'}</p>
+            </div>
+          </div>
         </div>
+
+        {/* 중앙: 게임 보드 */}
         <div className="center-panel">
           <div className="game-info">
             <div className="info-item">
@@ -95,14 +114,14 @@ const MiniTetrisPage = () => {
             
             {!isGameStarted && !gameOver && !gameCompleted && (
               <div className="game-overlay">
-                <h2>미니 테트리스</h2>
+                <h2>루나 테트리스</h2>
                 <p>25줄을 클리어하세요!</p>
                 <button onClick={handleStartGame} className="start-button">
                   게임 시작
                 </button>
                 <div className="overlay-buttons">
                   <button onClick={handleBackToLobby} className="back-button">
-                    로비로 돌아가기
+                    돌아가기
                   </button>
                 </div>
               </div>
@@ -117,7 +136,7 @@ const MiniTetrisPage = () => {
                   다시 시작
                 </button>
                 <button onClick={handleBackToLobby} className="back-button">
-                  로비로 돌아가기
+                  돌아가기
                 </button>
               </div>
             )}
@@ -145,11 +164,15 @@ const MiniTetrisPage = () => {
           </div>
         </div>
 
-        {/* 오른쪽: Next 영역 (4개 블록) */}
+        {/* 오른쪽: Next 영역 (4개 블록) - 금성에서는 블록만 안 보임 */}
         <div className="side-panel right-panel">
           <div className="panel-section next-panel">
             <h3>Next</h3>
-            <canvas ref={setNextCanvasRef} className="next-canvas" />
+            <canvas 
+              ref={setNextCanvasRef} 
+              className="next-canvas"
+              style={{ opacity: hideNext ? 0 : 1 }}
+            />
           </div>
         </div>
       </div>

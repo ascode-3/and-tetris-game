@@ -16,7 +16,7 @@ const LobbyPage = () => {
       case '좌중앙': // 랭킹
       case '우중앙': // 설정
       default:
-        alert('업데이트 예정입니다.');
+        alert('현재 지원하지 않는 기능입니다.');
         break;
     }
   };
