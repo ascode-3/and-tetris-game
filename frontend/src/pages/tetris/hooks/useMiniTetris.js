@@ -71,22 +71,39 @@ export function useMiniTetris(planetId = 'earth') {
     // === Planet Effect Functions ===
     
   const addGarbageLine = useCallback(() => {
-    if (!isGameStartedRef.current || isPausedRef.current || gameOver || gameCompleted) return;
+    if (!isGameStartedRef.current || isPausedRef.current) return;
     
     const config = getEffectConfig(planetEffects.current, 'garbageLines');
     if (!config) return;
     
-    console.log('🔥 가비지 라인 추가 시작!');
-    console.log('현재 블록 위치:', currentPieceRef.current?.pos);
-    
-    // 👇 블록이 너무 위에 있으면 라인 추가 스킵
-    if (currentPieceRef.current && currentPieceRef.current.pos.y <= 0) {
-        console.log('⚠️ 블록이 맨 위에 있어서 라인 추가 스킵');
-        return; // 이번엔 추가 안 함
+    /*console.log('🔥 가비지 라인 추가 시작!');
+    console.log('현재 블록 위치:', currentPieceRef.current?.pos);*/
+
+     if (gridRef.current[0].some(cell => cell !== 0)) {
+        console.log('❌ 맨 위줄에 블록이 있어서 게임오버!');
+        setGameOver(true);
+        setIsGameStarted(false);
+        isGameStartedRef.current = false;
+        if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current);
+        }
+        return; // 라인 추가 안 함
     }
     
-    // 1. 블록을 위로 이동
+    // 👇 블록이 너무 위에 있으면 강제로 내리기
     if (currentPieceRef.current) {
+        // 블록이 y <= 1이면 충돌 안 나는 곳까지 강제로 내림
+        while (currentPieceRef.current.pos.y <= 1) {
+            currentPieceRef.current.pos.y += 1;
+            // 너무 내려가서 충돌하면 다시 올리고 중단
+            if (checkCollision(currentPieceRef.current, gridRef.current)) {
+                currentPieceRef.current.pos.y -= 1;
+                console.log('⚠️ 블록을 더 내릴 수 없어서 라인 추가 스킵');
+                return;
+            }
+        }
+        
+        // 이제 블록을 위로 한 칸 이동
         currentPieceRef.current.pos.y -= 1;
         console.log('블록 이동 후 위치:', currentPieceRef.current.pos);
     }
@@ -122,7 +139,7 @@ export function useMiniTetris(planetId = 'earth') {
     } else {
         console.log('✅ 충돌 없음 - 계속 진행');
     }
-}, [gameOver, gameCompleted]);
+}, []);
     
     // 목성: 블록 투명화
     const startInvisibleEffect = useCallback(() => {
@@ -431,7 +448,7 @@ export function useMiniTetris(planetId = 'earth') {
         }
         
         animationFrameIdRef.current = requestAnimationFrame(gameLoop);
-    }, [gameOver, gameCompleted, drop]);
+    }, []);
 
     // Handle keyboard input
 const handleKeyDown = useCallback((event) => {
