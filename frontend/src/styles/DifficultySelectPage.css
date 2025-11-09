@@ -6,20 +6,20 @@
   height: 100vh;
   color: #333;
   font-family: 'Arial', sans-serif;
-  padding-top: 5vh;
+  padding-top: 2vh;
   overflow: hidden;
 }
 
 .difficulty-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .difficulty-header h1 {
-  font-size: 1.8rem;
+  font-size: 1.4rem;
   font-weight: bold;
   color: #2c3e50;
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.5rem;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
@@ -33,21 +33,69 @@
 }
 
 .instruction-image img {
-  width: 250px;  /* 고정 너비 */
-  height: 250px; /* 고정 높이 */
+  width: 180px;  /* 고정 너비 */
+  height: 180px; /* 고정 높이 */
   object-fit: contain; /* 비율 유지하면서 크기 맞춤 */
+}
+
+.planet-description {
+  color: #ffffff7c;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 6px 15px;
+  
+  /* 진한 그림자로 가독성 확보 */
+  text-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.9),
+    0 4px 8px rgba(0, 0, 0, 0.7),
+    0 0 10px rgba(0, 0, 0, 0.5);
+  
+  /* 또는 반투명 배경 추가 */
+}
+
+/* 또는 더 눈에 띄게 */
+.planet-description-bright {
+  color: #FFD700; /* 금색 */
+  font-weight: 600;
+  text-shadow: 
+    0 0 10px rgba(255, 215, 0, 0.8),
+    0 2px 8px rgba(0, 0, 0, 1),
+    0 4px 12px rgba(0, 0, 0, 0.8);
+}
+
+/* 또는 청록색 빛나는 효과 */
+.planet-description-cyan {
+  color: #00FFFF;
+  font-weight: 500;
+  text-shadow: 
+    0 0 5px rgba(0, 255, 255, 0.8),
+    0 0 10px rgba(0, 255, 255, 0.6),
+    0 2px 8px rgba(0, 0, 0, 1);
+}
+
+.planet-description p {
+  margin: 0;
+}
+
+/* 설명 글 우치*/
+.planet-info-box {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 /* 슬라이더 컨테이너 */
 .slider-container {
   position: relative;
   width: 100%;
-  height: 150px;
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 3rem;
-  margin-top: 4rem;
+  margin-bottom: 1.5rem;
+  margin-top: 2rem;
 }
 
 /* 중앙 가로선 */
@@ -74,7 +122,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 300%;
+  height: 200%;
   cursor: grab;
   user-select: none;
   z-index: 2;
@@ -87,15 +135,15 @@
 /* 레벨 원 */
 .level-circle {
   position: absolute;
-  width: 50px;
-  height: 50px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   background: linear-gradient(135deg, #a8b8d8 0%, #8b9dc3 100%);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: bold;
   color: white;
   will-change: transform, opacity;
@@ -110,9 +158,9 @@
 /* 기본 태그 스타일 */
 .difficulty-tag {
   display: inline-block;
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-size: 14px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.5px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -179,37 +227,37 @@
 .selection-info {
   text-align: center;
   background: white;
-  padding: 1.5rem 2.5rem;
-  border-radius: 16px;
+  padding: 1rem 2rem;
+  border-radius: 14px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
-  min-width: 280px;
+  margin-bottom: 1rem;
+  min-width: 260px;
    display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .selection-info h2 {
-  font-size: 1.6rem;
+  font-size: 1.3rem;
   color: #667eea;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.3rem;
   font-weight: bold;
 }
 
 .selection-info p {
   color: #718096;
-  margin-bottom: 1.2rem;
-  font-size: 0.95rem;
+  margin-bottom: 0.8rem;
+  font-size: 0.85rem;
 }
 
 .select-button {
-  padding: 10px 32px;
-  font-size: 1rem;
+  padding: 8px 28px;
+  font-size: 0.9rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 25px;
+  border-radius: 22px;
   cursor: pointer;
   font-weight: 600;
   transition: all 0.3s ease;
@@ -227,13 +275,13 @@
 
 /* 뒤로 가기 버튼 */
 .back-button {
-  padding: 8px 20px;
+  padding: 6px 18px;
   background-color: #e2e8f0;
   color: #4a5568;
   border: none;
-  border-radius: 20px;
+  border-radius: 18px;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 600;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
