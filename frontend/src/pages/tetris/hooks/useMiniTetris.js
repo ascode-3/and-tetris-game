@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import soundManager from '../../../utils/SoundManager';
 import { ROWS, COLS, BLOCK_SIZE, INITIAL_DROP_INTERVAL, LOCK_DELAY, MAX_LOCK_MOVES } from '../constants';
-import { createPiece, generateBag, checkCollision, getGhostPosition, rotatePiece } from '../utils/tetrisPiece';
+import { createPiece, generateBag, checkCollision, getGhostPosition, rotatePiece, rotate180 } from '../utils/tetrisPiece';
 import { clearLines, mergePiece, drawBoard, drawPreviewPiece, drawNextPieces } from '../utils/tetrisBoard';
 import { addLineClearEffects } from '../utils/effects';
 import { getPlanetEffects, isEffectEnabled, getEffectConfig } from '../../../config/planetEffects';
@@ -13,7 +13,9 @@ const KEYS = {
     DOWN: 40,    // Down arrow
     UP: 38,      // Up arrow
     SPACE: 32,   // Spacebar
-    SHIFT: 16    // Shift
+    SHIFT: 16,   // Shift
+    Z: 90,       // Z key (반시계 회전)
+    A: 65        // A key (180도 회전)
 };
 
 export function useMiniTetris(planetId = 'earth') {
@@ -98,7 +100,7 @@ export function useMiniTetris(planetId = 'earth') {
             // 너무 내려가서 충돌하면 다시 올리고 중단
             if (checkCollision(currentPieceRef.current, gridRef.current)) {
                 currentPieceRef.current.pos.y -= 1;
-                console.log('⚠️ 블록을 더 내릴 수 없어서 라인 추가 스킵');
+                /*console.log('⚠️ 블록을 더 내릴 수 없어서 라인 추가 스킵');*/
                 return;
             }
         }
@@ -129,7 +131,7 @@ export function useMiniTetris(planetId = 'earth') {
     
     // 3. 이동 후 충돌 체크
     if (currentPieceRef.current && checkCollision(currentPieceRef.current, gridRef.current)) {
-        console.log('❌ 충돌 감지 - 게임오버');
+        /*console.log('❌ 충돌 감지 - 게임오버');*/
         setGameOver(true);
         setIsGameStarted(false);
         isGameStartedRef.current = false;
@@ -137,7 +139,7 @@ export function useMiniTetris(planetId = 'earth') {
             clearInterval(timerIntervalRef.current);
         }
     } else {
-        console.log('✅ 충돌 없음 - 계속 진행');
+        /*console.log('✅ 충돌 없음 - 계속 진행');*/
     }
 }, []);
     
@@ -251,6 +253,7 @@ export function useMiniTetris(planetId = 'earth') {
             return false;
         }
         if (isLockingRef.current) {
+            lockDelayTimerRef.current = 0;
             moveCounterRef.current++;
         }
         // 좌우 이동 시 효과음 재생
@@ -391,7 +394,7 @@ export function useMiniTetris(planetId = 'earth') {
         updatePreviewDisplays();
     }, [spawnPiece, updatePreviewDisplays]);
 
-    // Rotate piece
+    // Rotate piece (시계방향)
     const rotate = useCallback(() => {
         if (!currentPieceRef.current || !isGameStartedRef.current || isPausedRef.current) return;
 
@@ -399,6 +402,45 @@ export function useMiniTetris(planetId = 'earth') {
         if (rotatedPiece) {
             currentPieceRef.current = rotatedPiece;
             if (isLockingRef.current) {
+                lockDelayTimerRef.current = 0;
+                moveCounterRef.current++;
+            }
+        }
+    }, []);
+
+    // Rotate piece counter-clockwise (반시계방향)
+    const rotateCCW = useCallback(() => {
+        if (!currentPieceRef.current || !isGameStartedRef.current || isPausedRef.current) return;
+        
+        // 수성: 반시계 회전 금지
+        if (isEffectEnabled(planetEffects.current, 'disableSpecialRotations')) {
+            return;
+        }
+
+        const rotatedPiece = rotatePiece(currentPieceRef.current, gridRef.current, -1);
+        if (rotatedPiece) {
+            currentPieceRef.current = rotatedPiece;
+            if (isLockingRef.current) {
+                lockDelayTimerRef.current = 0;
+                moveCounterRef.current++;
+            }
+        }
+    }, []);
+
+    // Rotate piece 180 degrees
+    const rotate180Deg = useCallback(() => {
+        if (!currentPieceRef.current || !isGameStartedRef.current || isPausedRef.current) return;
+        
+        // 수성: 180도 회전 금지
+        if (isEffectEnabled(planetEffects.current, 'disableSpecialRotations')) {
+            return;
+        }
+
+        const rotatedPiece = rotate180(currentPieceRef.current, gridRef.current);
+        if (rotatedPiece) {
+            currentPieceRef.current = rotatedPiece;
+            if (isLockingRef.current) {
+                lockDelayTimerRef.current = 0;
                 moveCounterRef.current++;
             }
         }
@@ -521,6 +563,12 @@ const executeKeyAction = useCallback((key) => {
         case KEYS.UP:
             rotate();
             break;
+        case KEYS.Z:
+            rotateCCW();
+            break;
+        case KEYS.A:
+            rotate180Deg();
+            break;
         case KEYS.SPACE:
             hardDrop();
             break;
@@ -530,7 +578,7 @@ const executeKeyAction = useCallback((key) => {
         default:
             break;
     }
-}, [movePiece, drop, rotate, hardDrop, holdPiece]);
+}, [movePiece, drop, rotate, rotateCCW, rotate180Deg, hardDrop, holdPiece]);
 
     // Start game
     const startGame = useCallback(() => {

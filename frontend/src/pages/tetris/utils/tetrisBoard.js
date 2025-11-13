@@ -47,36 +47,50 @@ function shadeColor(hexColor, percent) {
     return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
-// Draw a single block with 3D effect
+// Draw a single block with semi-flat effect
 export function drawBlock(ctx, x, y, color) {
     const posX = x * BLOCK_SIZE;
     const posY = y * BLOCK_SIZE;
 
-    // Create gradient for 3D shading
-    const gradient = ctx.createLinearGradient(posX, posY, posX + BLOCK_SIZE, posY + BLOCK_SIZE);
-    gradient.addColorStop(0, shadeColor(color, 0.3));     // lighter top-left
-    gradient.addColorStop(1, shadeColor(color, -0.3));    // darker bottom-right
+    // 색상별 어두운 색상 매핑
+    const darkColors = {
+        '#26c6da': '#00838f', // I - cyan
+        '#ab47bc': '#6a1b9a', // T - purple
+        '#ff9800': '#e65100', // L - orange
+        '#5A5AC9': '#283593', // J - blue
+        '#ffee58': '#f9a825', // O - yellow
+        '#7FBF5E': '#2e7d32', // S - green
+        '#ef5350': '#b71c1c', // Z - red
+        '#555555': '#2a2a2a'  // garbage - grey
+    };
 
-    // Main filled rectangle
-    ctx.fillStyle = gradient;
+    const darkColor = darkColors[color] || '#000000';
+
+    // 메인 블록 (밝은 색)
+    ctx.fillStyle = color;
     ctx.fillRect(posX, posY, BLOCK_SIZE, BLOCK_SIZE);
 
-    // Outer darker border
-    ctx.strokeStyle = shadeColor(color, -0.45);
-    ctx.lineWidth = 1.2;
+    // 테두리 (어두운 색)
+    ctx.strokeStyle = darkColor;
+    ctx.lineWidth = 1;
     ctx.strokeRect(posX + 0.5, posY + 0.5, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
 
-    // Inner highlight (small glossy square on top-left)
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-    ctx.fillRect(posX + 2, posY + 2, BLOCK_SIZE * 0.4, BLOCK_SIZE * 0.4);
+    // 아래쪽 강조 테두리 (4px)
+    ctx.fillStyle = darkColor;
+    ctx.fillRect(posX, posY + BLOCK_SIZE - 4, BLOCK_SIZE, 4);
 
-    // Optional inner shadow bottom-right
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
-    ctx.beginPath();
-    ctx.moveTo(posX + BLOCK_SIZE - 1, posY + 1);
-    ctx.lineTo(posX + BLOCK_SIZE - 1, posY + BLOCK_SIZE - 1);
-    ctx.lineTo(posX + 1, posY + BLOCK_SIZE - 1);
-    ctx.stroke();
+    // 오른쪽 강조 테두리 (2px)
+    ctx.fillRect(posX + BLOCK_SIZE - 2, posY, 2, BLOCK_SIZE);
+
+    // 그림자 효과
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+    ctx.shadowBlur = 2;
+    ctx.shadowOffsetY = 2;
+    
+    // 그림자 초기화
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
 }
 
 // Draw preview piece (Hold용)
@@ -147,23 +161,14 @@ export function drawNextPieces(ctx, pieces) {
         piece.shape.forEach((row, y) => {
             row.forEach((value, x) => {
                 if (value) {
-                    const posX = x * BLOCK_SIZE + offsetX;
-                    const posY = y * BLOCK_SIZE + offsetY;
+                    const tileX = x + (offsetX / BLOCK_SIZE);
+                    const tileY = y + (offsetY / BLOCK_SIZE);
                     
                     // 3D 효과
-                    const gradient = ctx.createLinearGradient(posX, posY, posX + BLOCK_SIZE, posY + BLOCK_SIZE);
-                    gradient.addColorStop(0, shadeColor(piece.color, 0.3));
-                    gradient.addColorStop(1, shadeColor(piece.color, -0.3));
+                    drawBlock(ctx, tileX, tileY, piece.color);
                     
-                    ctx.fillStyle = gradient;
-                    ctx.fillRect(posX, posY, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
-                    
-                    ctx.strokeStyle = shadeColor(piece.color, -0.45);
-                    ctx.lineWidth = 1.5;
-                    ctx.strokeRect(posX + 0.5, posY + 0.5, BLOCK_SIZE - 3, BLOCK_SIZE - 3);
-                    
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-                    ctx.fillRect(posX + 2, posY + 2, BLOCK_SIZE * 0.35, BLOCK_SIZE * 0.35);
+                    // 외곽선
+                    // 하이라이트
                 }
             });
         });
@@ -181,7 +186,7 @@ export function drawBoard(ctx, grid, currentPiece, ghostPiece, isInvisible = fal
     
     // 목성 투명화 효과 적용
     if (isInvisible) {
-        console.log('✅ 투명화 적용 중!'); // 👈 추가
+        console.log('✅ 투명화 적용 중!');
         ctx.globalAlpha = 0.05;
     }
     

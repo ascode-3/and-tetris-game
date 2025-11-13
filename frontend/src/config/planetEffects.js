@@ -9,7 +9,7 @@ export const PLANET_EFFECTS = {
     id: 'sun',
     name: '태양',
     difficulty: 1,
-    effectDescription: '4초마다 구멍이\n 2개 뚫린\n 라인 생성', // 👈 추가
+    effectDescription: '4초마다 구멍이\n 2개 뚫린\n 라인 생성',
     effects: {
       garbageLines: {
         enabled: true,
@@ -24,15 +24,19 @@ export const PLANET_EFFECTS = {
     id: 'mercury',
     name: '수성',
     difficulty: 2,
-    effectDescription: '방해 효과 없음', // 👈 추가
-    effects: {}
+    effectDescription: '180도, 반시계\n회전 금지',
+    effects: {
+      disableSpecialRotations: {
+        enabled: true
+      }
+    }
   },
   
   VENUS: {
     id: 'venus',
     name: '금성',
     difficulty: 3,
-    effectDescription: 'Next 영역 차단', // 👈 추가
+    effectDescription: 'Next 영역 차단',
     effects: {
       hideNext: {
         enabled: true
@@ -44,7 +48,7 @@ export const PLANET_EFFECTS = {
     id: 'earth',
     name: '지구',
     difficulty: 4,
-    effectDescription: '(튜토리얼)\n방해 효과 없음', // 👈 추가
+    effectDescription: '(튜토리얼)\n방해 효과 없음',
     effects: {}
   },
   
@@ -52,7 +56,7 @@ export const PLANET_EFFECTS = {
     id: 'mars',
     name: '화성',
     difficulty: 5,
-    effectDescription: '소프트 드롭을\n하드 드롭으로 변경', // 👈 추가
+    effectDescription: '소프트 드롭을\n하드 드롭으로 변경',
     effects: {
       downKeyHardDrop: {
         enabled: true
@@ -64,7 +68,7 @@ export const PLANET_EFFECTS = {
     id: 'jupiter',
     name: '목성',
     difficulty: 6,
-    effectDescription: '10초마다 2초\n동안 블록 투명화', // 👈 추가
+    effectDescription: '10초마다 2초\n동안 블록 투명화',
     effects: {
       invisibleBlocks: {
         enabled: true,
@@ -80,7 +84,7 @@ export const PLANET_EFFECTS = {
     id: 'saturn',
     name: '토성',
     difficulty: 7,
-    effectDescription: 'Hold 사용 불가', // 👈 추가
+    effectDescription: 'Hold 사용 불가',
     effects: {
       disableHold: {
         enabled: true
@@ -92,7 +96,7 @@ export const PLANET_EFFECTS = {
     id: 'uranus',
     name: '천왕성',
     difficulty: 8,
-    effectDescription: '좌우 조작이 반전', // 👈 추가
+    effectDescription: '좌우 조작이 반전',
     effects: {
       reverseControls: {
         enabled: true
@@ -104,11 +108,11 @@ export const PLANET_EFFECTS = {
     id: 'neptune',
     name: '해왕성',
     difficulty: 9,
-    effectDescription: '블록 낙하 속도\n5배', // 👈 추가
+    effectDescription: '블록 낙하 속도\n5배',
     effects: {
       dropSpeedMultiplier: {
         enabled: true,
-        multiplier: 5
+        multiplier: 8
       }
     }
   }

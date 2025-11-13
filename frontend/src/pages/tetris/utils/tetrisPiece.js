@@ -190,6 +190,47 @@ export function rotatePiece(piece, grid, dir = 1) {
     return null;
 }
 
+// Rotate piece 180 degrees
+export function rotate180(piece, grid) {
+    const currentOrientation = piece.orientation;
+    const newOrientation = (currentOrientation + 2) % 4;
+    
+    // Get wall kick table based on piece type
+    let wallKicks;
+    if (piece.type === 0) { // I piece
+        wallKicks = I_WALL_KICKS;
+    } else if (piece.type === 4) { // O piece
+        wallKicks = O_WALL_KICKS;
+    } else { // J, L, S, T, Z pieces
+        wallKicks = JLSTZ_WALL_KICKS;
+    }
+    
+    // 180도 회전은 두 번 회전하는 것과 같으므로, 중간 단계를 거쳐야 함
+    // 하지만 간단하게 직접 180도 회전 시도
+    const kickKey = `${currentOrientation}->${(currentOrientation + 1) % 4}`;
+    const kicks = wallKicks[kickKey] || [[0,0]];
+    
+    // Try each kick offset
+    for (const [dx, dy] of kicks) {
+        const testPiece = {
+            ...piece,
+            shape: ROTATION_STATES[piece.type][newOrientation],
+            orientation: newOrientation,
+            pos: { 
+                x: piece.pos.x + dx, 
+                y: piece.pos.y - dy
+            }
+        };
+        
+        if (!checkCollision(testPiece, grid)) {
+            return testPiece;
+        }
+    }
+    
+    // Rotation failed
+    return null;
+}
+
 // Move piece horizontally
 export function movePiece(piece, dir, grid) {
     const newPos = { x: piece.pos.x + dir, y: piece.pos.y };

@@ -5,13 +5,13 @@ export const BLOCK_SIZE = 24;
 
 // Colors for pieces
 export const COLORS = [
-    '#5FC9BD', // I piece – deep teal
+    '#26c6da', // I piece – deep teal
+    '#ab47bc', // T piece – deep lavender
+    '#ff9800', // L piece – burnt orange
     '#5A5AC9', // J piece – royal blue
-    '#C47A3A', // L piece – burnt orange
-    '#D9B73A', // O piece – goldenrod
+    '#ffee58', // O piece – goldenrod
     '#7FBF5E', // S piece – forest green
-    '#B55EB5', // T piece – deep lavender
-    '#C75A5A', // Z piece – brick red
+    '#ef5350', // Z piece – brick red
     '#555555'  // garbage grey
 ];
 
@@ -19,7 +19,7 @@ export const COLORS = [
 export const GHOST_PIECE_OPACITY = 0.3;
 
 // Game mechanics
-export const LOCK_DELAY = 250;
+export const LOCK_DELAY = 500;
 export const MAX_LOCK_MOVES = 15;
 export const INITIAL_DROP_INTERVAL = 500;
 

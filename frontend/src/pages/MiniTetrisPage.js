@@ -80,6 +80,8 @@ const MiniTetrisPage = () => {
             <div className="controls-list">
               <p>← → : 좌우 이동</p>
               <p>↑ : 회전</p>
+              <p>Z : 반시계 회전</p>
+              <p>A : 180도 회전</p>
               <p>↓ : 소프트 드롭</p>
               <p>Space : 하드 드롭</p>
               <p>Shift : Hold</p>
