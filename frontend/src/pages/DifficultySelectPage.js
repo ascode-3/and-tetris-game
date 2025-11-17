@@ -102,7 +102,7 @@ const DifficultySelectPage = () => {
   };
 
   const handleBack = () => {
-    navigate('/lobby');
+    navigate('/');
   };
 
   const handleMouseDown = (e) => {

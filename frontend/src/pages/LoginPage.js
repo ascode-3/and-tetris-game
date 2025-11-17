@@ -17,7 +17,7 @@ const LoginPage = () => {
     sessionStorage.setItem('userNickname', guestNickname);
     
     console.log(`Logged in as: ${guestNickname} (ID: ${userId})`);
-    navigate('/lobby'); // 방 목록 페이지로 이동
+    navigate('/select-difficulty'); // 방 목록 페이지로 이동
   };
 
   const containerStyle = {
